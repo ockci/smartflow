@@ -1,0 +1,123 @@
+import { LayoutDashboard, Calculator, FileText, TrendingUp, User, Settings, LogOut, HardHat, Package, Calendar } from 'lucide-react';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { Separator } from './ui/separator';
+
+interface SidebarProps {
+  currentPage: string;
+  onNavigate: (page: string) => void;
+  onLogout: () => void;
+}
+
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+}
+
+const menuItems: MenuItem[] = [
+  { id: 'dashboard', label: '대시보드', icon: LayoutDashboard },
+  { id: 'equipment', label: '설비 관리', icon: HardHat },
+  { id: 'orders', label: '주문 관리', icon: Package },
+  { id: 'schedule', label: '스케줄링', icon: Calendar },
+  { id: 'order', label: '발주 계산', icon: Calculator },
+  { id: 'history', label: '발주 이력', icon: FileText },
+  { id: 'simulation', label: '시뮬레이션', icon: TrendingUp },
+];
+
+
+
+export function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {
+  return (
+    <aside className="w-64 bg-white border-r border-[#E5E7EB] flex flex-col h-screen sticky top-0">
+      {/* User Profile Section */}
+      <div className="p-6 border-b border-[#E5E7EB]">
+        <div className="flex items-center gap-3 mb-2">
+          <Avatar className="w-12 h-12">
+            <AvatarFallback className="bg-gradient-to-br from-[#2563EB] to-[#1E40AF] text-white">
+              김
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <p className="text-xs text-[#6B7280]">환영합니다,</p>
+            <p className="text-[#1F2937]">김민준 님</p>
+          </div>
+        </div>
+        <div className="bg-blue-50 rounded-lg px-3 py-2 mt-3">
+          <p className="text-xs text-[#6B7280]">소속</p>
+          <p className="text-sm text-[#1F2937]">㈜ 데모컴퍼니</p>
+        </div>
+      </div>
+
+      {/* Navigation Menu */}
+      <nav className="flex-1 p-4 overflow-y-auto">
+        <div className="space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentPage === item.id;
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                className={`
+                  w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+                  ${isActive 
+                    ? 'bg-gradient-to-r from-[#2563EB] to-[#1E40AF] text-white shadow-md' 
+                    : 'text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#1F2937]'
+                  }
+                `}
+              >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{item.label}</span>
+                
+              </button>
+              
+            );
+          })}
+        </div>
+
+        <Separator className="my-6" />
+
+        {/* Settings Menu */}
+        <div className="space-y-1">
+          <button
+            onClick={() => onNavigate('mypage')}
+            className={`
+              w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+              ${currentPage === 'mypage'
+                ? 'bg-gradient-to-r from-[#2563EB] to-[#1E40AF] text-white shadow-md' 
+                : 'text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#1F2937]'
+              }
+            `}
+          >
+            <User className="w-5 h-5 flex-shrink-0" />
+            <span className="text-sm">마이페이지</span>
+          </button>
+
+          <button
+            onClick={() => {
+              onLogout();          // 로그아웃 처리 (App.tsx의 handleLogout 실행)
+              onNavigate('login'); // 로그인 페이지로 이동
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-[#6B7280] hover:bg-red-50 hover:text-[#EF4444]"
+          >
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            <span className="text-sm">로그아웃</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Quick Stats */}
+      <div className="p-4 border-t border-[#E5E7EB]">
+        <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-[#6B7280]">이번 달 발주</p>
+            <div className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse" />
+          </div>
+          <p className="text-2xl text-[#2563EB] mb-1">28건</p>
+          <p className="text-xs text-[#6B7280]">총 1,245만원</p>
+        </div>
+      </div>
+    </aside>
+  );
+}
