@@ -120,9 +120,9 @@ export function ProductManagementPage({ onNavigate, onLogout }: ProductManagemen
     try {
       const token = localStorage.getItem('accessToken');
       await axios.delete(
-        `${API_BASE_URL}/api/products/delete/${productCode}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+     `${API_BASE_URL}/api/products/${productCode}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+    );
       toast.success('제품이 삭제되었습니다.');
       fetchProducts();
     } catch (error: any) {

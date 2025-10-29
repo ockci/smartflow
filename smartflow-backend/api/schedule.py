@@ -76,8 +76,9 @@ class ProductionScheduler:
             machine = self.equipment[best_machine_id]
             start_time = self.machine_timelines[best_machine_id]
             
-            # ìž‘ì—… ì‹œê°„ ê³„ì‚°
-            work_hours = order.quantity / machine.capacity_per_hour
+            # 작업 시간 계산 (capacity가 0이면 기본값 50 사용)
+            capacity = machine.capacity_per_hour if machine.capacity_per_hour > 0 else 50
+            work_hours = order.quantity / capacity
             duration_minutes = int(work_hours * 60)
             end_time = start_time + timedelta(minutes=duration_minutes)
             
@@ -215,7 +216,12 @@ def generate_schedule(
     except Exception as e:
         db.rollback()
         import traceback
-        print(f"ìŠ¤ì¼€ì¤„ ìƒì„± ì˜¤ë¥˜: {traceback.format_exc()}")
+        import sys
+        sys.stderr.write("=" * 80 + "\n")
+        sys.stderr.write("SCHEDULE GENERATION ERROR:\n")
+        sys.stderr.write(traceback.format_exc() + "\n")
+        sys.stderr.write("=" * 80 + "\n")
+        sys.stderr.flush()
         raise HTTPException(
             status_code=500,
             detail=f"ìŠ¤ì¼€ì¤„ ìƒì„± ì‹¤íŒ¨: {str(e)}"

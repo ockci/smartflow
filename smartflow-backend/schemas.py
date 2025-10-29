@@ -7,32 +7,35 @@ from datetime import datetime, date
 from typing import Optional, List
 
 
-# ==================== 설비 스키마 ====================
-class EquipmentBase(BaseModel):
-    machine_id: str = Field(..., description="사출기 번호 (예: 1호기)")
+# -------------------------------
+# 설비 생성/수정용 스키마
+# -------------------------------
+class EquipmentCreate(BaseModel):
+    machine_id: str
     machine_name: Optional[str] = None
-    tonnage: int = Field(..., gt=0, description="톤수")
-    capacity_per_hour: int = Field(..., gt=0, description="시간당 생산능력")
-    shift_start: str = Field(..., description="가동 시작 시간 (HH:MM)")
-    shift_end: str = Field(..., description="가동 종료 시간 (HH:MM)")
+    tonnage: Optional[int] = None
+    capacity_per_hour: Optional[int] = None
+    shift_start: Optional[str] = None
+    shift_end: Optional[str] = None
     status: Optional[str] = "active"
 
-class EquipmentCreate(EquipmentBase):
-    pass
 
-class EquipmentUpdate(BaseModel):
+# -------------------------------
+# 설비 응답용 스키마
+# -------------------------------
+class Equipment(BaseModel):
+    id: int
+    user_id: int
+    machine_id: str
     machine_name: Optional[str] = None
     tonnage: Optional[int] = None
     capacity_per_hour: Optional[int] = None
     shift_start: Optional[str] = None
     shift_end: Optional[str] = None
     status: Optional[str] = None
-
-class Equipment(EquipmentBase):
-    id: int
     created_at: datetime
-    updated_at: Optional[datetime]
-    
+    updated_at: Optional[datetime] = None
+
     class Config:
         from_attributes = True
 

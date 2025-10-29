@@ -12,6 +12,7 @@ import { Sidebar } from '../components/Sidebar';  // ← 추가
 
 interface Equipment {
   id: string;
+  dbId: number;
   name: string;
   tonnage: number;
   operatingHours: string;
@@ -44,7 +45,13 @@ export function EquipmentPage({ onNavigate, onLogout }: EquipmentPageProps) {
     try {
       setIsLoading(true);
       const data = await equipmentAPI.list();
+      console.log('🔍 받은 데이터:', data);  // 디버깅
+      console.log('🔍 첫 번째 아이템:', data[0]);  // 디버깅
+      
       const converted = data.map(convertEquipment);
+      console.log('🔍 변환된 데이터:', converted);  // 디버깅
+      console.log('🔍 첫 번째 변환 아이템:', converted[0]);  // 디버깅
+      
       setEquipmentList(converted);
       toast.success('설비 목록을 불러왔습니다');
     } catch (error) {
@@ -54,6 +61,7 @@ export function EquipmentPage({ onNavigate, onLogout }: EquipmentPageProps) {
       setIsLoading(false);
     }
   };
+
 
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
@@ -121,23 +129,29 @@ export function EquipmentPage({ onNavigate, onLogout }: EquipmentPageProps) {
   };
 
   // 설비 삭제
-  const handleDeleteEquipment = async (machineId: string) => {
+  const handleDeleteEquipment = async (dbId: number, machineId: string) => {
     if (!confirm(`${machineId}를 삭제하시겠습니까?`)) return;
 
     try {
-      // machine_id로 삭제하려면 백엔드 API 수정 필요
-      // 임시로 ID 변환 (실제로는 백엔드에서 machine_id로 삭제 API 추가 필요)
-      const equipment = equipmentList.find(e => e.id === machineId);
-      if (!equipment) return;
-
       toast.info('설비 삭제 중...');
-      await equipmentAPI.delete(machineId); // ID가 필요한 경우
+      await equipmentAPI.delete(dbId);  // ✅ 숫자 ID 사용
       
       toast.success('설비가 삭제되었습니다');
       await fetchEquipment();
     } catch (error: any) {
       console.error('설비 삭제 실패:', error);
-      toast.error(error.response?.data?.detail || '설비 삭제에 실패했습니다');
+      
+      // 에러 메시지 안전하게 추출
+      let errorMsg = '설비 삭제에 실패했습니다';
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMsg = detail;
+        } else if (typeof detail === 'object') {
+          errorMsg = detail.msg || detail.message || '설비 삭제에 실패했습니다';
+        }
+      }
+      toast.error(errorMsg);
     }
   };
 
@@ -315,7 +329,7 @@ return (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteEquipment(item.id)}
+                          onClick={() => handleDeleteEquipment(item.dbId, item.id)}
                           className="text-red-500 hover:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />

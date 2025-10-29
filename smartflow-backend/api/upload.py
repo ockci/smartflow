@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from database import get_db  # ✅ DB 세션만 여기서 가져오기
 from models import Equipment, Order, Schedule  # ✅ 모델은 models.py에서 가져오기
 from datetime import datetime
+from fastapi import UploadFile
 import pandas as pd
 from io import BytesIO
 from api.auth import get_current_user  # ✅ api 폴더 안의 auth
@@ -80,6 +81,28 @@ async def parse_order_excel(file: UploadFile) -> list[dict]:
         
     except Exception as e:
         raise ValueError(f"엑셀 파싱 실패: {str(e)}")
+    
+
+# ---------------------------
+# 설비 엑셀 파서 (✅ 새로 추가됨)
+# ---------------------------
+async def parse_equipment_excel(file: UploadFile):
+    contents = await file.read()
+    df = pd.read_excel(BytesIO(contents))
+
+    header_map = {
+        '설비번호': 'machine_id',
+        '설비명': 'machine_name',
+        '톤수': 'tonnage',
+        '시간당생산량': 'capacity_per_hour',
+        '가동시작': 'shift_start',
+        '가동종료': 'shift_end',
+        '상태': 'status',
+    }
+    df.columns = [header_map.get(c.strip(), c.strip()) for c in df.columns]
+
+    equipment = df.to_dict(orient="records")
+    return equipment
 
 # ============================================================
 # 업로드 API

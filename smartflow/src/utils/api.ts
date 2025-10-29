@@ -258,8 +258,9 @@ export const equipmentAPI = {
    /**
    * 설비 삭제
    */
-  delete: async (machineId: string) => {
-    const response = await apiClient.delete(`/api/equipment/delete/${machineId}`);
+  // api.ts
+  delete: async (equipmentId: number) => {
+    const response = await apiClient.delete(`/api/equipment/${equipmentId}`);
     return response.data;
   },
 };
@@ -532,14 +533,18 @@ export const dashboardAPI = {
 /**
  * 백엔드 Equipment를 프론트엔드 형식으로 변환
  */
-export const convertEquipment = (backend: BackendEquipment) => ({
-  id: backend.machine_id, // machine_id를 id로
-  name: backend.machine_name || backend.machine_id,
-  tonnage: backend.tonnage,
-  operatingHours: `${backend.shift_start}-${backend.shift_end}`,
-  capacity: backend.capacity_per_hour,
-  status: backend.status,
-});
+export const convertEquipment = (backend: BackendEquipment) => {
+  console.log('🔧 변환 중:', backend);  // 디버깅
+  return {
+    id: backend.machine_id,
+    dbId: backend.id,
+    name: backend.machine_name || backend.machine_id,
+    tonnage: backend.tonnage,
+    operatingHours: `${backend.shift_start}-${backend.shift_end}`,
+    capacity: backend.capacity_per_hour,
+    status: backend.status,
+  };
+};
 
 /**
  * 백엔드 Order를 프론트엔드 형식으로 변환
