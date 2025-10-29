@@ -21,7 +21,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 앱 로드 시 토큰 확인
+  // ì•± ë¡œë“œ ì‹œ í† í° í™•ì¸
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (token) {
@@ -42,8 +42,8 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('accessToken'); // accessToken 제거
-    localStorage.removeItem('login'); // 혹시 다른 로그인 플래그도 있으면 같이 제거
+    localStorage.removeItem('accessToken'); // accessToken ì œê±°
+    localStorage.removeItem('login'); // í˜¹ì‹œ ë‹¤ë¥¸ ë¡œê·¸ì¸ í”Œëž˜ê·¸ë„ ìžˆìœ¼ë©´ ê°™ì´ ì œê±°
     setIsLoggedIn(false);
     setCurrentPage('login');
   };
@@ -52,13 +52,13 @@ export default function App() {
     setCurrentPage(page as Page);
   };
 
-  // 로딩 중
+  // ë¡œë”© ì¤‘
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#2563EB]"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
+          <p className="mt-4 text-gray-600">ë¡œë”© ì¤‘...</p>
         </div>
       </div>
     );
@@ -66,7 +66,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      {/* 로그인 상태가 아닐 때 */}
+      {/* ë¡œê·¸ì¸ ìƒíƒœê°€ ì•„ë‹ ë•Œ */}
       {!isLoggedIn && (
         <>
           {currentPage === 'login' && (
@@ -84,7 +84,7 @@ export default function App() {
         </>
       )}
 
-      {/* 로그인 상태일 때 */}
+      {/* ë¡œê·¸ì¸ ìƒíƒœì¼ ë•Œ */}
       {isLoggedIn && (
         <>
           {currentPage === 'dashboard' && <DashboardPage onNavigate={handleNavigate} onLogout={handleLogout} />}
@@ -95,7 +95,7 @@ export default function App() {
           {currentPage === 'equipment' && <EquipmentPage onNavigate={handleNavigate} onLogout={handleLogout} />}
           {currentPage === 'orders' && <OrderUploadPage onNavigate={handleNavigate} onLogout={handleLogout} />}
           {currentPage === 'schedule' && <SchedulePage onNavigate={handleNavigate} onLogout={handleLogout} />}
-          {currentPage === 'forecast' && <ForecastPage onNavigate={handleNavigate} />}
+          {currentPage === 'forecast' && <ForecastPage onNavigate={handleNavigate} onLogout={handleLogout} />}
           {currentPage === 'products' && <ProductManagementPage onNavigate={handleNavigate} onLogout={handleLogout} />}
         </>
       )}

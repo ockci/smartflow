@@ -50,7 +50,7 @@ app.include_router(equipment.router, prefix="/api/equipment", tags=["Equipment"]
 app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
 app.include_router(products.router, prefix="/api/products", tags=["Products"])
 app.include_router(schedule.router, prefix="/api/schedule", tags=["Schedule"])
-app.include_router(forecast.router, prefix="/api/forecast", tags=["Forecast"])
+app.include_router(forecast.router, tags=["Forecast"])
 app.include_router(inventory.router, prefix="/api/inventory", tags=["Inventory"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(upload.router, prefix="/api", tags=["Upload"])
