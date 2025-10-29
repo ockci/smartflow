@@ -1,5 +1,5 @@
 """
-SmartFlow 데이터베이스 모델 (수정 버전 - user_id 추가)
+SmartFlow 데이터베이스 모델 (완전판 - Product, BOM, InventoryTransaction 추가)
 SQLAlchemy ORM 모델 정의
 """
 from sqlalchemy import Boolean, Column, Integer, String, Float, DateTime, Date, Text, ForeignKey, Time
@@ -19,13 +19,14 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    # ⭐ 관계 추가
+    # 관계
     equipment = relationship("Equipment", back_populates="user")
     orders = relationship("Order", back_populates="user")
     schedules = relationship("Schedule", back_populates="user")
     forecasts = relationship("Forecast", back_populates="user")
-    inventories = relationship("Inventory", back_populates="user")  # ⭐ 추가
-    inventory_policies = relationship("InventoryPolicy", back_populates="user")  # ⭐ 추가
+    inventories = relationship("Inventory", back_populates="user")
+    inventory_policies = relationship("InventoryPolicy", back_populates="user")
+    products = relationship("Product", back_populates="user")  # ⭐ 새로 추가
 
 class Equipment(Base):
     """설비 정보 테이블"""
@@ -103,7 +104,6 @@ class Forecast(Base):
     
     user = relationship("User", back_populates="forecasts")
 
-# ⭐⭐⭐ 새로 추가: 실제 재고 테이블 ⭐⭐⭐
 class Inventory(Base):
     """재고 현황 테이블 (실제 재고 수량)"""
     __tablename__ = "inventories"
@@ -138,3 +138,63 @@ class InventoryPolicy(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     user = relationship("User", back_populates="inventory_policies")
+
+# ⭐⭐⭐ 새로 추가: 제품 마스터 테이블 ⭐⭐⭐
+class Product(Base):
+    """제품 정보 마스터 테이블"""
+    __tablename__ = "products"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    product_code = Column(String(50), index=True)  # 제품 코드
+    product_name = Column(String(100))  # 제품명
+    
+    # 가격 정보
+    unit_price = Column(Float, nullable=True)  # 판매 단가
+    unit_cost = Column(Float, nullable=True)  # 제조 원가
+    
+    # 생산 정보
+    required_tonnage = Column(Integer, nullable=True)  # 필요 톤수 (사출기 선택용)
+    cycle_time = Column(Integer, nullable=True)  # 사이클 타임 (초)
+    cavity_count = Column(Integer, default=1)  # 캐비티 수 (한 번에 몇 개 생산)
+    
+    # 재고 정보
+    unit = Column(String(20), default="개")
+    min_stock = Column(Integer, default=0)  # 최소 재고
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    user = relationship("User", back_populates="products")
+    bom_items = relationship("BOM", back_populates="product", foreign_keys="BOM.product_code")
+
+# ⭐⭐⭐ 새로 추가: BOM (자재 명세서) ⭐⭐⭐
+class BOM(Base):
+    """자재 명세서 (제품 1개 생산에 필요한 원자재)"""
+    __tablename__ = "bom"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    product_code = Column(String(50), ForeignKey("products.product_code"))
+    material_code = Column(String(50))  # 원자재 코드
+    material_name = Column(String(100))  # 원자재 이름
+    quantity_per_unit = Column(Float)  # 제품 1개당 필요 수량
+    unit = Column(String(20))  # 단위 (kg, g, 개 등)
+    
+    product = relationship("Product", back_populates="bom_items", foreign_keys=[product_code])
+
+# ⭐⭐⭐ 새로 추가: 재고 이동 이력 ⭐⭐⭐
+class InventoryTransaction(Base):
+    """재고 이동 이력"""
+    __tablename__ = "inventory_transactions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    product_code = Column(String(50), index=True)
+    transaction_type = Column(String(20))  # 'production', 'shipment', 'adjustment', 'incoming'
+    quantity = Column(Integer)  # + 증가, - 감소
+    before_stock = Column(Integer)
+    after_stock = Column(Integer)
+    reference_id = Column(String(50), nullable=True)  # 주문번호 or 생산계획번호
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

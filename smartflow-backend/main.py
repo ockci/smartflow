@@ -4,10 +4,10 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from contextlib import asynccontextmanager
 from io import BytesIO
 import uvicorn
-from core.excel_parser import create_order_template, create_equipment_template
+from core.excel_parser import create_order_template, create_equipment_template, create_product_template
 
 # ✅ api 폴더 안의 라우터들
-from api import equipment, orders, schedule, forecast, inventory, dashboard, upload, auth
+from api import equipment, orders, schedule, forecast, inventory, dashboard, upload, auth, products
 
 from database import engine, Base, init_db
 
@@ -46,6 +46,7 @@ app.include_router(inventory.router, prefix="/api/inventory", tags=["Inventory"]
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(upload.router, prefix="/api", tags=["Upload"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
+app.include_router(products.router, prefix="/api/products", tags=["Products"])
 
 
 # ✅ ⬇️ 여기에 위치해야 함 (라우터 등록 이후, if문 밖)
@@ -60,31 +61,40 @@ def download_equipment_template_endpoint():
         headers={"Content-Disposition": "attachment; filename=equipment_template.xlsx"},
     )
 
-@app.get("/api/orders/download/template")
-def download_order_template_endpoint():
-    """주문 템플릿 다운로드"""
+@app.get("/api/products/download/template")
+def download_product_template_endpoint():
+    """제품 템플릿 다운로드"""
     import pandas as pd
     
     df = pd.DataFrame({
-        '주문번호': ['ORD-001', 'ORD-002', 'ORD-003'],
-        '제품코드': ['Product_c0', 'Product_c6', 'Product_c15'],
-        '제품명': ['전자부품 A-100', '자동차 부품 B-200', '가전 부품 C-300'],
-        '수량': [1000, 800, 1200],
-        '납기일': ['2025-11-15', '2025-11-20', '2025-11-25'],
-        '우선순위': [1, 2, 1],
-        '긴급여부': [False, False, True],
-        '비고': ['', '', '긴급 주문']
+        '제품코드': ['PROD-001', 'PROD-002', 'PROD-003'],
+        '제품명': ['전자부품 A', '자동차 부품 B', '가전 부품 C'],
+        '사이클타임(초)': [30, 45, 60],
+        '캐비티수': [4, 2, 8],
+        '원자재명': ['플라스틱 A', '플라스틱 B', '플라스틱 C'],
+        '원자재_단위당_사용량(kg)': [0.5, 0.8, 0.3],
+        '비고': ['', '', '']
     })
     
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='주문정보')
+        df.to_excel(writer, index=False, sheet_name='제품정보')
     output.seek(0)
     
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=order_template.xlsx"},
+        headers={"Content-Disposition": "attachment; filename=product_template.xlsx"},
+    )
+
+@app.get("/api/products/download/template")
+def download_product_template_endpoint():
+    """제품 템플릿 다운로드"""
+    excel_bytes = create_product_template()
+    return StreamingResponse(
+        BytesIO(excel_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=product_template.xlsx"},
     )
 
 @app.get("/")

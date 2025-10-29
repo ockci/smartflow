@@ -1,6 +1,7 @@
 """
-SmartFlow 생산 스케줄링 엔진
+SmartFlow 생산 스케줄링 엔진 (개선 버전)
 납기 준수율 최대화 & 설비 가동률 최적화
+✨ Product 정보 기반 스케줄링 추가
 """
 from datetime import datetime, timedelta, time
 from typing import List, Dict, Optional
@@ -15,16 +16,27 @@ class ProductionScheduler:
     2. 설비 가동률 최대화
     3. 금형 교체 최소화 (제품 그룹핑)
     
+    개선사항:
+    - ✨ 제품별 필요 톤수 체크
+    - ✨ 사이클 타임 기반 정확한 생산시간 계산
+    - ✨ 캐비티 수 반영
+    
     알고리즘: Greedy + Priority-based
     """
     
-    def __init__(self, equipment_list: List[Dict], orders: List[Dict]):
+    def __init__(self, equipment_list: List[Dict], orders: List[Dict], products: List[Dict] = None):
         """
         Args:
             equipment_list: 설비 정보 리스트
             orders: 주문 정보 리스트
+            products: 제품 정보 리스트 (optional) ⭐ 새로 추가
         """
         self.equipment = {eq['machine_id']: eq for eq in equipment_list}
+        
+        # ⭐ 제품 정보 딕셔너리 (product_code를 키로)
+        self.products = {}
+        if products:
+            self.products = {p['product_code']: p for p in products}
         
         # 주문 정렬: 우선순위 → 납기일 → 긴급 여부
         self.orders = sorted(
@@ -72,24 +84,32 @@ class ProductionScheduler:
         schedule_id = f"SCHEDULE-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         
         for order in self.orders:
-            # 1. 적합한 설비 찾기
-            suitable_machine = self._find_best_machine(order)
+            # 0. 제품 정보 가져오기 ⭐ 새로 추가
+            product = self.products.get(order['product_code'])
+            
+            # 1. 적합한 설비 찾기 (제품 정보 포함)
+            suitable_machine = self._find_best_machine(order, product)
             
             if not suitable_machine:
                 # 적합한 설비가 없으면 스킵 (실제로는 대기열에 추가)
                 continue
             
-            # 2. 작업 시간 계산
+            # 2. 작업 시간 계산 (제품 정보 기반) ⭐ 개선
             machine_id = suitable_machine['machine_id']
             start_time = self.machine_timelines[machine_id]
             
-            # 작업 시간 = (수량 / 시간당 생산능력) * 60분
-            capacity = suitable_machine['capacity_per_hour']
-            work_hours = order['quantity'] / capacity
-            duration_minutes = int(work_hours * 60)
-            
-            # 금형 교체 시간 추가 (10분)
-            duration_minutes += 10
+            # ✨ 제품 정보가 있으면 사이클 타임 기반 계산
+            if product and product.get('cycle_time'):
+                duration_minutes = self._calculate_production_time_accurate(
+                    product, 
+                    order['quantity']
+                )
+            else:
+                # 기존 방식 (fallback)
+                capacity = suitable_machine['capacity_per_hour']
+                work_hours = order['quantity'] / capacity
+                duration_minutes = int(work_hours * 60)
+                duration_minutes += 10  # 금형 교체 시간
             
             end_time = start_time + timedelta(minutes=duration_minutes)
             
@@ -130,33 +150,44 @@ class ProductionScheduler:
             'generated_at': datetime.now().isoformat()
         }
     
-    def _find_best_machine(self, order: Dict) -> Optional[Dict]:
+    def _find_best_machine(self, order: Dict, product: Optional[Dict] = None) -> Optional[Dict]:
         """
-        주문에 가장 적합한 설비 찾기
+        주문에 가장 적합한 설비 찾기 (제품 정보 기반) ⭐ 개선
         
         선택 기준:
-        1. 가장 빨리 시작 가능한 설비
-        2. 생산능력이 적절한 설비
+        1. ✨ 제품 필요 톤수 <= 설비 톤수 (새로 추가!)
+        2. 가장 빨리 시작 가능한 설비
+        3. 생산능력이 적절한 설비
         
         Args:
             order: 주문 정보
+            product: 제품 정보 (optional)
         
         Returns:
             선택된 설비 정보
         """
         available_machines = []
         
+        # ⭐ 제품 필요 톤수 확인
+        required_tonnage = 0
+        if product and product.get('required_tonnage'):
+            required_tonnage = product['required_tonnage']
+        
         for machine_id, machine in self.equipment.items():
             if machine.get('status') != 'active':
                 continue
             
-            # 간단 버전: 모든 설비 사용 가능
-            # 실제로는 제품별 필요 톤수 체크 필요
+            # ✨ 톤수 체크 (중요!)
+            machine_tonnage = machine.get('tonnage', 999999)
+            if required_tonnage > 0 and machine_tonnage < required_tonnage:
+                # 이 설비는 톤수가 부족해서 사용 불가
+                continue
+            
             available_machines.append({
                 'machine_id': machine_id,
                 'start_time': self.machine_timelines[machine_id],
                 'capacity_per_hour': machine['capacity_per_hour'],
-                'tonnage': machine.get('tonnage', 100)
+                'tonnage': machine_tonnage
             })
         
         if not available_machines:
@@ -169,6 +200,35 @@ class ProductionScheduler:
             'machine_id': best_machine['machine_id'],
             **self.equipment[best_machine['machine_id']]
         }
+    
+    def _calculate_production_time_accurate(self, product: Dict, quantity: int) -> int:
+        """
+        제품 정보 기반 정확한 생산 시간 계산 ⭐ 새로 추가
+        
+        Args:
+            product: 제품 정보 (cycle_time, cavity_count)
+            quantity: 생산 수량
+        
+        Returns:
+            duration_minutes (int)
+        """
+        cycle_time = product.get('cycle_time', 30)  # 초 (기본값 30초)
+        cavity_count = product.get('cavity_count', 1)  # 캐비티 수 (기본값 1)
+        
+        # 총 사이클 수 = 생산 수량 / 캐비티 수
+        # 예: 1000개 생산, 캐비티 4개 → 250회 사이클
+        total_cycles = quantity / cavity_count
+        
+        # 생산 시간 (분) = (총 사이클 * 사이클 타임) / 60
+        # 예: 250회 * 30초 = 7500초 = 125분
+        production_minutes = (total_cycles * cycle_time) / 60
+        
+        # 금형 교체 시간 추가 (10분)
+        setup_time = 10
+        
+        total_minutes = int(production_minutes + setup_time)
+        
+        return total_minutes
     
     def _adjust_for_shift_hours(
         self, 

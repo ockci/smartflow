@@ -166,73 +166,22 @@ def create_urgent_order(
 
 @router.get("/download/template")
 def download_order_template():
-    """
-    주문 템플릿 엑셀 파일 다운로드
-    """
-    file_path = os.path.join(TEMPLATE_DIR, "order_template.xlsx")
+    """주문 템플릿 다운로드"""
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    from core.excel_parser import create_order_template
 
-    if not os.path.exists(file_path):
-        return Response(
-            content="Template file not found",
-            status_code=404
-        )
-
-    return FileResponse(
-        path=file_path,
-        filename="주문_템플릿.xlsx",
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-
-@router.get("/download/template")
-def download_excel_template(type: str = Query("order", enum=["order", "equipment"])):
-    """
-    엑셀 템플릿 다운로드
-    - type=order → 주문 템플릿
-    - type=equipment → 설비 템플릿
-    """
-    if type == "equipment":
-        excel_bytes = create_equipment_template()
-        filename = "설비정보_템플릿.xlsx"
-    else:
-        excel_bytes = create_order_template()
-        filename = "주문정보_템플릿.xlsx"
+    excel_bytes = create_order_template()
 
     return StreamingResponse(
         BytesIO(excel_bytes),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={
-            "Content-Disposition": f"attachment; filename={filename}"
+            "Content-Disposition": "attachment; filename=order_template.xlsx"
         },
     )
 
 
-@router.get("/download/template")
-def download_order_template_direct():
-    """주문 템플릿 다운로드"""
-    import pandas as pd
-    
-    df = pd.DataFrame({
-        '주문번호': ['ORD-001', 'ORD-002', 'ORD-003'],
-        '제품코드': ['Product_c0', 'Product_c6', 'Product_c15'],
-        '제품명': ['전자부품 A-100', '자동차 부품 B-200', '가전 부품 C-300'],
-        '수량': [1000, 800, 1200],
-        '납기일': ['2025-11-15', '2025-11-20', '2025-11-25'],
-        '우선순위': [1, 2, 1],
-        '긴급여부': [False, False, True],
-        '비고': ['', '', '긴급 주문']
-    })
-    
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='주문정보')
-    output.seek(0)
-    
-    return StreamingResponse(
-        output,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=order_template.xlsx"},
-    )
 
 
 @router.post("/upload")

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Calculator, FileText, TrendingUp, User, Settings, LogOut, HardHat, Package, Calendar } from 'lucide-react';
+import { LayoutDashboard, Calculator, FileText, TrendingUp, User, Settings, LogOut, HardHat, Package, Calendar, Box } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Separator } from './ui/separator';
 import { authAPI } from '../utils/api';  // ⭐ API import 추가
@@ -19,6 +19,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { id: 'dashboard', label: '대시보드', icon: LayoutDashboard },
   { id: 'equipment', label: '설비 관리', icon: HardHat },
+  { id: 'products', label: '제품 관리', icon: Box },
   { id: 'orders', label: '주문 관리', icon: Package },
   { id: 'schedule', label: '스케줄링', icon: Calendar },
   { id: 'order', label: '발주 계산', icon: Calculator },

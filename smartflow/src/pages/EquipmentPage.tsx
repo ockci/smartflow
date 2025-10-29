@@ -131,7 +131,7 @@ export function EquipmentPage({ onNavigate, onLogout }: EquipmentPageProps) {
       if (!equipment) return;
 
       toast.info('설비 삭제 중...');
-      // await equipmentAPI.delete(equipment.id); // ID가 필요한 경우
+      await equipmentAPI.delete(machineId); // ID가 필요한 경우
       
       toast.success('설비가 삭제되었습니다');
       await fetchEquipment();

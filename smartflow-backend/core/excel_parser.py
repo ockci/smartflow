@@ -211,3 +211,26 @@ def create_order_template() -> bytes:
     df.to_excel(output, index=False, engine='openpyxl')
     output.seek(0)
     return output.getvalue()
+
+def create_product_template() -> bytes:
+    """
+    제품 정보 엑셀 템플릿 생성
+    
+    Returns:
+        엑셀 파일 바이트
+    """
+    df = pd.DataFrame({
+        '제품코드': ['PROD-001', 'PROD-002', 'PROD-003'],
+        '제품명': ['전자부품 A', '자동차 부품 B', '가전 부품 C'],
+        '사이클타임(초)': [30, 45, 60],
+        '캐비티수': [4, 2, 8],
+        '필요톤수': [100, 150, 200],
+        '원자재명': ['플라스틱 A', '플라스틱 B', '플라스틱 C'],
+        '원자재_단위당_사용량(kg)': [0.5, 0.8, 0.3],
+        '비고': ['', '', '']
+    })
+    
+    output = BytesIO()
+    df.to_excel(output, index=False, engine='openpyxl')
+    output.seek(0)
+    return output.getvalue()

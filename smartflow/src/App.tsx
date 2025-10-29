@@ -11,8 +11,10 @@ import { EquipmentPage } from './pages/EquipmentPage';
 import { OrderUploadPage } from './pages/OrderUploadPage';
 import { SchedulePage } from './pages/SchedulePage';
 import { ForecastPage } from './pages/ForecastPage';
+import { ProductManagementPage } from './pages/ProductManagementPage';
 
-type Page = 'login' | 'signup' | 'dashboard' | 'order' | 'simulation' | 'history' | 'mypage' | 'equipment' | 'orders' | 'schedule' | 'forecast';
+type Page = 'login' | 'signup' | 'dashboard' | 'order' | 'simulation' | 'history' | 'mypage' | 'equipment' | 'orders' | 'schedule' | 'forecast' | 'products';
+
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('login');
@@ -94,6 +96,7 @@ export default function App() {
           {currentPage === 'orders' && <OrderUploadPage onNavigate={handleNavigate} onLogout={handleLogout} />}
           {currentPage === 'schedule' && <SchedulePage onNavigate={handleNavigate} onLogout={handleLogout} />}
           {currentPage === 'forecast' && <ForecastPage onNavigate={handleNavigate} />}
+          {currentPage === 'products' && <ProductManagementPage onNavigate={handleNavigate} onLogout={handleLogout} />}
         </>
       )}
 
