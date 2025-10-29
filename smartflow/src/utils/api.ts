@@ -2,16 +2,43 @@
  * SmartFlow API 클라이언트
  * 백엔드 FastAPI와 통신하는 모든 함수를 정의
  */
+// 🟢 수정된 코드 - Authorization 헤더 자동 주입
 import axios from 'axios';
 
-// API 클라이언트 설정
-const apiClient = axios.create({
-  baseURL: 'http://localhost:8000',
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,  // ✅ CORS 쿠키 포함
 });
+
+// ⭐ 요청 인터셉터: 모든 요청에 토큰 자동 추가
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// ⭐ 응답 인터셉터: 401 에러 시 로그인 페이지로 리다이렉트
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('accessToken');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // ============================================================================
 // 토큰 자동 추가 인터셉터 (중요!)
@@ -228,11 +255,11 @@ export const equipmentAPI = {
     return `${apiClient.defaults.baseURL}/api/equipment/download/template`;
   },
 
-  /**
+   /**
    * 설비 삭제
    */
-  delete: async (id: number) => {
-    const response = await apiClient.delete(`/api/equipment/delete/${id}`);
+  delete: async (machineId: string) => {
+    const response = await apiClient.delete(`/api/equipment/delete/${machineId}`);
     return response.data;
   },
 };
@@ -425,6 +452,47 @@ export const inventoryAPI = {
     const response = await apiClient.get('/api/inventory/alerts');
     return response.data;
   },
+
+  // ⭐ 여기부터 추가!
+  /**
+   * 재고 목록 조회
+   */
+  list: async () => {
+    const response = await apiClient.get('/api/inventory/list');
+    return response.data;
+  },
+
+  /**
+   * 재고 등록
+   */
+  create: async (data: any) => {
+    const response = await apiClient.post('/api/inventory/create', data);
+    return response.data;
+  },
+
+  /**
+   * 재고 수정
+   */
+  update: async (productCode: string, data: any) => {
+    const response = await apiClient.put(`/api/inventory/update/${productCode}`, data);
+    return response.data;
+  },
+
+  /**
+   * 재고 삭제
+   */
+  delete: async (productCode: string) => {
+    const response = await apiClient.delete(`/api/inventory/delete/${productCode}`);
+    return response.data;
+  },
+
+  /**
+   * 재고 상세 조회
+   */
+  detail: async (productCode: string) => {
+    const response = await apiClient.get(`/api/inventory/${productCode}`);
+    return response.data;
+  },
 };
 
 // ============================================================================
@@ -513,5 +581,7 @@ export const convertScheduleForGantt = (backend: BackendSchedule, index: number)
     isOnTime: backend.is_on_time,
   };
 };
+
+
 
 export default apiClient;

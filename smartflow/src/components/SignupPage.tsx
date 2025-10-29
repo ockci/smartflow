@@ -56,8 +56,8 @@ export function SignupPage({ onSignup, onBackToLogin }: SignupPageProps) {
       });
 
       console.log('회원가입 성공!');
-      alert('회원가입이 완료되었습니다!');
-      onSignup();
+      alert('회원가입이 완료되었습니다! 로그인해주세요.');
+      onBackToLogin();
     } catch (error: any) {
       console.error('회원가입 실패:', error);
       const errorMsg = error.response?.data?.detail || '회원가입에 실패했습니다';

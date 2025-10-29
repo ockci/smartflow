@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict
-from database import get_db  # ✅ DB 세션만 가져오기
-from models import Forecast  # ✅ 모델은 models.py에서 가져오기
+from database import get_db
+from models import Forecast, Order, User
 from pydantic import BaseModel
 from datetime import datetime, date, timedelta
+from api.auth import get_current_user
 import random
 import httpx
 
@@ -89,29 +90,36 @@ def dummy_predict_demand(product_code: str, start_date: date, days: int) -> List
 
 # 수요 예측 API
 @router.post("/predict")
-async def predict_demand(request: ForecastRequest, db: Session = Depends(get_db)):  # ← async 추가!
-    """수요 예측"""
+async def predict_demand(
+    request: ForecastRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)  # ⭐ 인증 추가
+):
+    """수요 예측 (현재 사용자만)"""
     try:
         # 예측 실행 (AI 서버 호출)
-        predictions = await call_ai_server_predict(  # ← await 추가!
+        predictions = await call_ai_server_predict(
             request.product_code,
             request.start_date,
             request.days
         )
         
+        # ⭐ user_id 필터링 및 주입
         # 데이터베이스에 저장
         for pred in predictions:
-            # 기존 예측 삭제 (같은 날짜)
+            # 기존 예측 삭제 (같은 날짜, 같은 사용자)
             db.query(Forecast).filter(
                 Forecast.product_code == pred['product_code'],
-                Forecast.forecast_date == pred['forecast_date']
+                Forecast.forecast_date == pred['forecast_date'],
+                Forecast.user_id == current_user.id
             ).delete()
             
-            # 새 예측 저장
+            # 새 예측 저장 (user_id 포함)
             db_forecast = Forecast(
                 **pred,
+                user_id=current_user.id,  # ⭐ 추가
                 model_version="v1.0",
-                mape=15.5  # 더미 값
+                mape=15.5
             )
             db.add(db_forecast)
         
@@ -130,11 +138,17 @@ async def predict_demand(request: ForecastRequest, db: Session = Depends(get_db)
 
 # 예측 결과 조회
 @router.get("/result/{product_code}", response_model=List[ForecastResponse])
-def get_forecast_result(product_code: str, db: Session = Depends(get_db)):
-    """제품별 예측 결과 조회"""
+def get_forecast_result(
+    product_code: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)  # ⭐ 인증 추가
+):
+    """제품별 예측 결과 조회 (현재 사용자만)"""
     try:
+        # ⭐ user_id 필터링
         forecasts = db.query(Forecast).filter(
-            Forecast.product_code == product_code
+            Forecast.product_code == product_code,
+            Forecast.user_id == current_user.id
         ).order_by(Forecast.forecast_date).all()
         
         return forecasts
@@ -144,12 +158,17 @@ def get_forecast_result(product_code: str, db: Session = Depends(get_db)):
 
 # 전체 제품 일괄 예측
 @router.post("/batch")
-def batch_predict(db: Session = Depends(get_db)):
-    """전체 제품 일괄 예측"""
+async def batch_predict(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)  # ⭐ 인증 추가
+):
+    """전체 제품 일괄 예측 (현재 사용자만)"""
     try:
-        # 모든 제품 코드 가져오기 (Order 테이블에서)
-        from database import Order
-        product_codes = db.query(Order.product_code).distinct().all()
+        # ⭐ user_id 필터링
+        # 현재 사용자의 모든 제품 코드 가져오기
+        product_codes = db.query(Order.product_code).filter(
+            Order.user_id == current_user.id
+        ).distinct().all()
         product_codes = [pc[0] for pc in product_codes]
         
         if not product_codes:
@@ -164,12 +183,20 @@ def batch_predict(db: Session = Depends(get_db)):
             )
             
             for pred in predictions:
+                # ⭐ 같은 사용자의 기존 예측 삭제
                 db.query(Forecast).filter(
                     Forecast.product_code == pred['product_code'],
-                    Forecast.forecast_date == pred['forecast_date']
+                    Forecast.forecast_date == pred['forecast_date'],
+                    Forecast.user_id == current_user.id
                 ).delete()
                 
-                db_forecast = Forecast(**pred, model_version="v1.0", mape=15.5)
+                # ⭐ user_id 포함하여 저장
+                db_forecast = Forecast(
+                    **pred,
+                    user_id=current_user.id,
+                    model_version="v1.0",
+                    mape=15.5
+                )
                 db.add(db_forecast)
             
             results.append({
@@ -190,12 +217,17 @@ def batch_predict(db: Session = Depends(get_db)):
 
 # 예측 정확도
 @router.get("/accuracy")
-def get_forecast_accuracy(db: Session = Depends(get_db)):
-    """예측 정확도 조회"""
+def get_forecast_accuracy(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)  # ⭐ 인증 추가
+):
+    """예측 정확도 조회 (현재 사용자만)"""
     try:
+        # ⭐ user_id 필터링
         # 실제 수요가 있는 예측만 필터링
         forecasts = db.query(Forecast).filter(
-            Forecast.actual_demand.isnot(None)
+            Forecast.actual_demand.isnot(None),
+            Forecast.user_id == current_user.id
         ).all()
         
         if not forecasts:

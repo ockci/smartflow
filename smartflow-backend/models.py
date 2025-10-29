@@ -24,24 +24,25 @@ class User(Base):
     orders = relationship("Order", back_populates="user")
     schedules = relationship("Schedule", back_populates="user")
     forecasts = relationship("Forecast", back_populates="user")
+    inventories = relationship("Inventory", back_populates="user")  # ⭐ 추가
+    inventory_policies = relationship("InventoryPolicy", back_populates="user")  # ⭐ 추가
 
 class Equipment(Base):
     """설비 정보 테이블"""
     __tablename__ = "equipment"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # ⭐ 추가
-    machine_id = Column(String(50), index=True)  # unique 제거 (user별로 구분)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    machine_id = Column(String(50), index=True)
     machine_name = Column(String(100))
-    tonnage = Column(Integer)  # 톤수
-    capacity_per_hour = Column(Integer)  # 시간당 생산능력
-    shift_start = Column(String(10))  # "08:00"
-    shift_end = Column(String(10))  # "18:00"
-    status = Column(String(20), default="active")  # active, maintenance, inactive
+    tonnage = Column(Integer)
+    capacity_per_hour = Column(Integer)
+    shift_start = Column(String(10))
+    shift_end = Column(String(10))
+    status = Column(String(20), default="active")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # ⭐ 관계 추가
     user = relationship("User", back_populates="equipment")
 
 class Order(Base):
@@ -49,20 +50,19 @@ class Order(Base):
     __tablename__ = "orders"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # ⭐ 추가
-    order_number = Column(String(50), index=True)  # unique 제거
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    order_number = Column(String(50), index=True)
     product_code = Column(String(50), index=True)
     product_name = Column(String(100))
     quantity = Column(Integer)
     due_date = Column(Date)
-    priority = Column(Integer, default=1)  # 1=높음, 5=낮음
-    status = Column(String(20), default="pending")  # pending, scheduled, in_progress, completed
+    priority = Column(Integer, default=1)
+    status = Column(String(20), default="pending")
     is_urgent = Column(Boolean, default=False)
     notes = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # ⭐ 관계 추가
     user = relationship("User", back_populates="orders")
     schedules = relationship("Schedule", back_populates="order")
 
@@ -71,7 +71,7 @@ class Schedule(Base):
     __tablename__ = "schedules"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # ⭐ 추가
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     schedule_id = Column(String(50), index=True)
     order_id = Column(Integer, ForeignKey("orders.id"))
     machine_id = Column(String(50))
@@ -79,10 +79,9 @@ class Schedule(Base):
     end_time = Column(DateTime(timezone=True))
     duration_minutes = Column(Integer)
     is_on_time = Column(Boolean)
-    status = Column(String(20), default="planned")  # planned, in_progress, completed
+    status = Column(String(20), default="planned")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    # ⭐ 관계 추가
     user = relationship("User", back_populates="schedules")
     order = relationship("Order", back_populates="schedules")
 
@@ -91,7 +90,7 @@ class Forecast(Base):
     __tablename__ = "forecasts"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # ⭐ 추가
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     product_code = Column(String(50), index=True)
     forecast_date = Column(Date)
     predicted_demand = Column(Integer)
@@ -102,19 +101,40 @@ class Forecast(Base):
     model_version = Column(String(50))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    # ⭐ 관계 추가
     user = relationship("User", back_populates="forecasts")
 
+# ⭐⭐⭐ 새로 추가: 실제 재고 테이블 ⭐⭐⭐
+class Inventory(Base):
+    """재고 현황 테이블 (실제 재고 수량)"""
+    __tablename__ = "inventories"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    product_code = Column(String(50), index=True)
+    product_name = Column(String(100))
+    current_stock = Column(Integer, default=0)  # 현재 재고
+    unit = Column(String(20), default="개")  # 단위
+    location = Column(String(100), nullable=True)  # 보관 위치
+    min_stock = Column(Integer, default=0)  # 최소 재고 (알림용)
+    max_stock = Column(Integer, nullable=True)  # 최대 재고
+    unit_cost = Column(Float, nullable=True)  # 단가
+    last_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    user = relationship("User", back_populates="inventories")
+
 class InventoryPolicy(Base):
-    """재고 정책 테이블"""
+    """재고 정책 테이블 (안전재고, 재주문점 등)"""
     __tablename__ = "inventory_policies"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # ⭐ 추가
-    product_code = Column(String(50), index=True)  # unique 제거
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    product_code = Column(String(50), index=True)
     safety_stock = Column(Integer)  # 안전재고
     reorder_point = Column(Integer)  # 재주문점
     recommended_order_qty = Column(Integer)  # 추천 발주량
     lead_time_days = Column(Integer)  # 리드타임
     service_level = Column(Float, default=0.95)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    user = relationship("User", back_populates="inventory_policies")

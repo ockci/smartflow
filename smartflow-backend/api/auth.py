@@ -58,14 +58,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        # ⭐ 변경: user_id로 사용자 식별
+        user_id: int = payload.get("user_id")
+        if user_id is None:
             raise credential_exception
-        token_data = TokenData(email=email)
     except JWTError:
         raise credential_exception
     
-    user = db.query(UserModel).filter(UserModel.email == token_data.email).first()
+    # ⭐ 변경: user_id로 조회
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
     if user is None:
         raise credential_exception
     return user
@@ -118,10 +119,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # 토큰 생성
+    # ⭐ 변경: 토큰에 user_id 포함
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"user_id": user.id, "email": user.email}, expires_delta=access_token_expires
     )
     
     return {"access_token": access_token, "token_type": "bearer"}

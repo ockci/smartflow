@@ -6,9 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import { forecastAPI, inventoryAPI, orderAPI, type ForecastResult } from '../utils/api';
+import { Sidebar } from '../components/Sidebar';
 
 interface ForecastPageProps {
   onNavigate: (page: string) => void;
+  onLogout: () => void;
 }
 
 interface Product {
@@ -22,7 +24,7 @@ interface ChartDataPoint {
   forecast: number;
 }
 
-export function ForecastPage({ onNavigate }: ForecastPageProps) {
+export function ForecastPage({ onNavigate, onLogout }: ForecastPageProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [isForecastRun, setIsForecastRun] = useState(false);
@@ -121,7 +123,10 @@ export function ForecastPage({ onNavigate }: ForecastPageProps) {
     (forecastData ? Math.round(forecastData.predictions.reduce((a, b) => a + b, 0) * 0.6) : 1200);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F0F9FF] via-[#F9FAFB] to-[#F0FFFE]">
+  <div className="flex min-h-screen bg-gradient-to-br from-[#F0F9FF] via-[#F9FAFB] to-[#F0FFFE]">
+    <Sidebar currentPage="forecast" onNavigate={onNavigate} onLogout={onLogout} />
+    
+    <div className="flex-1 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-[#E5E7EB] sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -294,6 +299,7 @@ export function ForecastPage({ onNavigate }: ForecastPageProps) {
           </div>
         )}
       </main>
-    </div>
+    </div>  // flex-1 flex flex-col 닫기
+  </div>  // 👈 이 줄 추가! (Sidebar 컨테이너 닫기)
   );
 }

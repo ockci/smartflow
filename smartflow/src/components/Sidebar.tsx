@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { LayoutDashboard, Calculator, FileText, TrendingUp, User, Settings, LogOut, HardHat, Package, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Separator } from './ui/separator';
+import { authAPI } from '../utils/api';  // ⭐ API import 추가
 
 interface SidebarProps {
   currentPage: string;
@@ -24,9 +26,28 @@ const menuItems: MenuItem[] = [
   { id: 'simulation', label: '시뮬레이션', icon: TrendingUp },
 ];
 
-
-
 export function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {
+  // ⭐ 실제 사용자 정보 상태
+  const [userName, setUserName] = useState('로딩중...');
+  const [companyName, setCompanyName] = useState('');
+
+  // ⭐ 컴포넌트 마운트 시 사용자 정보 가져오기
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const user = await authAPI.getCurrentUser();
+        setUserName(user.username);
+        setCompanyName(user.company_name || '회사 미등록');
+      } catch (err) {
+        console.error('사용자 정보 로딩 실패:', err);
+        setUserName('Unknown');
+        setCompanyName('');
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
   return (
     <aside className="w-64 bg-white border-r border-[#E5E7EB] flex flex-col h-screen sticky top-0">
       {/* User Profile Section */}
@@ -34,17 +55,17 @@ export function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {
         <div className="flex items-center gap-3 mb-2">
           <Avatar className="w-12 h-12">
             <AvatarFallback className="bg-gradient-to-br from-[#2563EB] to-[#1E40AF] text-white">
-              김
+              {userName.charAt(0)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <p className="text-xs text-[#6B7280]">환영합니다,</p>
-            <p className="text-[#1F2937]">김민준 님</p>
+            <p className="text-[#1F2937]">{userName} 님</p>
           </div>
         </div>
         <div className="bg-blue-50 rounded-lg px-3 py-2 mt-3">
           <p className="text-xs text-[#6B7280]">소속</p>
-          <p className="text-sm text-[#1F2937]">㈜ 데모컴퍼니</p>
+          <p className="text-sm text-[#1F2937]">{companyName}</p>
         </div>
       </div>
 
@@ -69,9 +90,7 @@ export function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
                 <span className="text-sm">{item.label}</span>
-                
               </button>
-              
             );
           })}
         </div>
@@ -96,28 +115,16 @@ export function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {
 
           <button
             onClick={() => {
-              onLogout();          // 로그아웃 처리 (App.tsx의 handleLogout 실행)
-              onNavigate('login'); // 로그인 페이지로 이동
+              onLogout();
+              onNavigate('login');
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-[#6B7280] hover:bg-red-50 hover:text-[#EF4444]"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[#6B7280] hover:bg-red-50 hover:text-red-600 transition-all duration-200"
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm">로그아웃</span>
           </button>
         </div>
       </nav>
-
-      {/* Quick Stats */}
-      <div className="p-4 border-t border-[#E5E7EB]">
-        <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-[#6B7280]">이번 달 발주</p>
-            <div className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse" />
-          </div>
-          <p className="text-2xl text-[#2563EB] mb-1">28건</p>
-          <p className="text-xs text-[#6B7280]">총 1,245만원</p>
-        </div>
-      </div>
     </aside>
   );
 }

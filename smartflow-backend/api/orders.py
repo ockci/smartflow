@@ -4,8 +4,8 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
-from database import get_db  # ✅ get_db만 database에서 불러오고
-from models import Order     # ✅ Order는 models에서 불러옴
+from database import get_db
+from models import Order
 from schemas import OrderCreate, Order as OrderSchema
 from api.auth import get_current_user
 from models import User
@@ -16,6 +16,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from core.excel_parser import create_order_template, create_equipment_template
+from datetime import datetime
 
 router = APIRouter()
 
@@ -25,13 +26,13 @@ TEMPLATE_DIR = os.path.join(os.getcwd(), "templates")
 def get_orders(
     status: str | None = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # ⭐ 인증 추가
+    current_user: User = Depends(get_current_user)
 ):
     """
     주문 목록 조회 (현재 사용자의 주문만)
     """
     query = db.query(Order).filter(
-        Order.user_id == current_user.id  # ⭐ 필터링
+        Order.user_id == current_user.id
     )
     
     if status:
@@ -44,14 +45,14 @@ def get_orders(
 def get_order(
     order_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # ⭐ 인증 추가
+    current_user: User = Depends(get_current_user)
 ):
     """
     특정 주문 조회
     """
     order = db.query(Order).filter(
         Order.id == order_id,
-        Order.user_id == current_user.id  # ⭐ 필터링
+        Order.user_id == current_user.id
     ).first()
     
     if not order:
@@ -62,7 +63,7 @@ def get_order(
 def create_order(
     order: OrderCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # ⭐ 인증 추가
+    current_user: User = Depends(get_current_user)
 ):
     """
     주문 생성
@@ -70,7 +71,7 @@ def create_order(
     # 같은 사용자의 같은 주문번호 중복 체크
     existing = db.query(Order).filter(
         Order.order_number == order.order_number,
-        Order.user_id == current_user.id  # ⭐ 필터링
+        Order.user_id == current_user.id
     ).first()
     
     if existing:
@@ -79,9 +80,12 @@ def create_order(
             detail=f"이미 존재하는 주문번호입니다: {order.order_number}"
         )
     
+    # ⭐ 변경: user_id 제외하고 서버에서 강제 주입
     db_order = Order(
-        **order.dict(),
-        user_id=current_user.id  # ⭐ user_id 자동 설정
+        **order.dict(exclude={'user_id'}),
+        user_id=current_user.id,
+        status="pending",
+        created_at=datetime.utcnow()
     )
     db.add(db_order)
     db.commit()
@@ -93,22 +97,24 @@ def update_order(
     order_id: int,
     order: OrderCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # ⭐ 인증 추가
+    current_user: User = Depends(get_current_user)
 ):
     """
     주문 수정
     """
     db_order = db.query(Order).filter(
         Order.id == order_id,
-        Order.user_id == current_user.id  # ⭐ 필터링
+        Order.user_id == current_user.id
     ).first()
     
     if not db_order:
         raise HTTPException(status_code=404, detail="주문을 찾을 수 없습니다")
     
-    for key, value in order.dict().items():
+    # ⭐ 변경: user_id 수정 방지
+    for key, value in order.dict(exclude={'user_id'}).items():
         setattr(db_order, key, value)
     
+    db_order.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(db_order)
     return db_order
@@ -117,14 +123,14 @@ def update_order(
 def delete_order(
     order_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # ⭐ 인증 추가
+    current_user: User = Depends(get_current_user)
 ):
     """
     주문 삭제
     """
     db_order = db.query(Order).filter(
         Order.id == order_id,
-        Order.user_id == current_user.id  # ⭐ 필터링
+        Order.user_id == current_user.id
     ).first()
     
     if not db_order:
@@ -143,13 +149,15 @@ def create_urgent_order(
     """
     긴급 주문 생성 (우선순위 최상위)
     """
-    order_data = order.dict()
-    # ✅ 'is_urgent' 키 중복 방지 (있으면 덮어씀)
-    order_data["is_urgent"] = True
-    order_data["priority"] = 1
-    order_data["user_id"] = current_user.id
-
-    db_order = Order(**order_data)
+    # ⭐ 변경: user_id, is_urgent, priority 제외하고 서버에서 강제 설정
+    db_order = Order(
+        **order.dict(exclude={'user_id', 'is_urgent', 'priority'}),
+        user_id=current_user.id,
+        is_urgent=True,
+        priority=1,
+        status="pending",
+        created_at=datetime.utcnow()
+    )
     db.add(db_order)
     db.commit()
     db.refresh(db_order)
@@ -190,7 +198,6 @@ def download_excel_template(type: str = Query("order", enum=["order", "equipment
         excel_bytes = create_order_template()
         filename = "주문정보_템플릿.xlsx"
 
-    # ✅ 메모리 버퍼로 바로 스트리밍 전송
     return StreamingResponse(
         BytesIO(excel_bytes),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -236,7 +243,6 @@ async def upload_orders(
 ):
     """주문 정보 엑셀 업로드"""
     from api.upload import parse_order_excel
-    from datetime import datetime
     
     try:
         if not file.filename.endswith(('.xlsx', '.xls')):
@@ -256,10 +262,13 @@ async def upload_orders(
                 
                 if existing:
                     for key, value in order.items():
-                        setattr(existing, key, value)
+                        if key != 'user_id':  # ⭐ user_id 수정 방지
+                            setattr(existing, key, value)
                     existing.updated_at = datetime.now()
                 else:
-                    db_order = Order(**order, user_id=current_user.id)
+                    # ⭐ user_id 제외하고 생성
+                    order_data = {k: v for k, v in order.items() if k != 'user_id'}
+                    db_order = Order(**order_data, user_id=current_user.id)
                     db.add(db_order)
                 
                 success_count += 1
