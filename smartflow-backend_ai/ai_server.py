@@ -18,6 +18,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+IMPROVED_MODEL = None
+
+def load_improved_model():
+    global IMPROVED_MODEL
+    if IMPROVED_MODEL is None:
+        try:
+            with open('ai_models/smartflow_models_improved.pkl', 'rb') as f:
+                IMPROVED_MODEL = pickle.load(f)
+        except Exception as e:
+            print(f"모델 로드 실패: {e}")
+            IMPROVED_MODEL = None
+    return IMPROVED_MODEL
+
 # ============================================================================
 # Pydantic 모델
 # ============================================================================
@@ -47,7 +60,8 @@ class TwoStageForecaster:
     def __init__(self):
         self.models = None
         self.model_paths = [
-            "/mnt/user-data/uploads/models.pkl",  # 업로드된 위치
+            "./ai_models/smartflow_models_improved.pkl",  # 🆕 맨 위에 추가!
+            "/mnt/user-data/uploads/models.pkl",
             "./models.pkl",
             "./ai_models/models.pkl",
             "/mnt/project/models.pkl"
@@ -74,7 +88,7 @@ class TwoStageForecaster:
                 continue
         
         print("=" * 60)
-        print("❌ models.pkl 파일을 찾을 수 없습니다")
+        print("❌ smartflow_models_improved.pkl 파일을 찾을 수 없습니다")
         print("📊 더미 모드로 전환 (보고서 기반 통계 모델 사용)")
         print("=" * 60)
         self.models = None
@@ -453,7 +467,7 @@ def get_model_status():
         "model_type": "Two-Stage Approach" if forecaster.models else "Statistical Fallback",
         "mode": "Production" if forecaster.models else "Dummy",
         "checked_paths": forecaster.model_paths,
-        "recommendation": "models.pkl을 프로젝트 루트에 배치하세요" if not forecaster.models else "모델 정상 작동 중"
+        "recommendation": "smartflow_models_improved.pkl을 프로젝트 루트에 배치하세요" if not forecaster.models else "모델 정상 작동 중"
     }
 
 if __name__ == "__main__":

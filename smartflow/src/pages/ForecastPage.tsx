@@ -80,6 +80,12 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
   const [forecast, setForecast] = useState<ProductForecast | null>(null);
   const [loading, setLoading] = useState(false);
   const [systemStatus, setSystemStatus] = useState<any>(null);
+  const getConfidenceVariant = (confidence: string) => {
+  if (confidence === "높음") return "default";
+  if (confidence === "중간") return "secondary";
+  if (confidence === "낮음") return "outline";
+  return "outline";
+};
   
   // 업로드 관련 state
   const [uploading, setUploading] = useState(false);
@@ -325,15 +331,6 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
     }
   };
 
-  const getConfidenceBadgeColor = (confidence: string) => {
-    switch (confidence) {
-      case '높음': return 'default';
-      case '중간': return 'secondary';
-      case '낮음': return 'secondary';
-      case '없음': return 'outline';
-      default: return 'outline';
-    }
-  };
 
   const selectedProduct = products.find(p => p.id === selectedProductId);
   const orderQuantity = calculateOrderQuantity();
@@ -392,7 +389,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
                   <Button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
+                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     <Upload className="h-4 w-4" />
                     {uploading ? '파일 분석 중...' : '과거 주문 내역 업로드'}
@@ -416,6 +413,8 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
               </div>
             </CardContent>
           </Card>
+
+          
 
           {/* 시스템 상태 카드 */}
           {systemStatus && (
@@ -451,6 +450,35 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
             </Card>
           )}
 
+          
+          {systemStatus?.status === 'AI_READY' && (
+            <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-purple-600" />
+                  AI 모델 성능
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">평균 정확도</p>
+                    <p className="text-2xl font-bold text-purple-600">88.5%</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">평균 오차</p>
+                    <p className="text-2xl font-bold text-blue-600">15.96</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">모델 버전</p>
+                    <p className="text-2xl font-bold text-green-600">v2.0</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+
           {/* 제품 선택 및 예측 */}
           <Card>
             <CardHeader>
@@ -479,7 +507,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
                 <Button
                   onClick={() => selectedProductId && predictProduct(selectedProductId)}
                   disabled={!selectedProductId || loading}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                  className="bg-purple-600 hover:bg-purple-700"
                 >
                   {loading ? '예측 중...' : '🤖 AI 예측 실행'}
                 </Button>
@@ -529,9 +557,16 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
                           <CardHeader className="pb-3">
                             <CardTitle className="text-lg flex items-center justify-between">
                               <span>{h.horizon}</span>
-                              <Badge variant={getConfidenceBadgeColor(h.prediction.confidence)}>
-                                {h.prediction.confidence}
-                              </Badge>
+                              <div className="flex flex-col items-center gap-1">
+                                <Badge variant={getConfidenceVariant(h.prediction.confidence)}>
+                                  {h.prediction.confidence}
+                                </Badge>
+                                  {h.prediction.probability !== undefined && h.prediction.probability !== null && (
+                                    <span className="text-xs text-gray-500">
+                                      {h.prediction.probability.toFixed(0)}%
+                                    </span>
+                                   )}
+                                </div>
                             </CardTitle>
                             <CardDescription className="text-xs">{h.date}</CardDescription>
                           </CardHeader>
@@ -706,7 +741,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
                   <div className="flex gap-4">
                     <Button 
                       onClick={handleOrderConfirm}
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold text-lg py-6"
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-lg py-6"
                     >
                       <ShoppingCart className="h-5 w-5 mr-2" />
                       발주 확정 ({orderQuantity.toLocaleString()}개)

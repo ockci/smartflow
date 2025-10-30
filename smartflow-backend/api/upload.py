@@ -56,26 +56,55 @@ async def parse_order_excel(file: UploadFile) -> list[dict]:
         contents = await file.read()
         df = pd.read_excel(BytesIO(contents))
         
-        required_cols = ['주문번호', '제품코드', '수량', '납기일']
+        # 🔍 디버그: 엑셀 컬럼명 출력
+        print(f"📊 엑셀 컬럼명: {df.columns.tolist()}")
+        print(f"📊 첫 행 데이터: {df.head(1).to_dict('records')}")
+        
+        col_mapping = {
+            'order_number': 'order_number', '주문번호': 'order_number',
+            'product_code': 'product_code', '제품코드': 'product_code',
+            'product_name': 'product_name', '제품명': 'product_name',
+            'quantity': 'quantity', '수량': 'quantity',
+            'due_date': 'due_date', '납기일': 'due_date',
+            'priority': 'priority', '우선순위': 'priority',
+            'status': 'status', '상태': 'status',
+            'is_urgent': 'is_urgent', '긴급여부': 'is_urgent',
+            'notes': 'notes', '비고': 'notes'
+        }
+        df.columns = [col_mapping.get(col, col) for col in df.columns]
+
+# 필수 컬럼 체크 (영어명으로)
+        required_cols = ['order_number', 'product_code', 'quantity', 'due_date']
         missing = [col for col in required_cols if col not in df.columns]
         if missing:
             raise ValueError(f"필수 컬럼 누락: {', '.join(missing)}")
         
-        df['납기일'] = pd.to_datetime(df['납기일'])
+        # 날짜 파싱 (영어 컬럼명으로)
+        df['due_date'] = pd.to_datetime(df['due_date'])
         
         orders = []
         for idx, row in df.iterrows():
-            if row['수량'] <= 0:
+            if row['quantity'] <= 0:
                 raise ValueError(f"{idx+2}번째 줄: 수량은 양수여야 합니다")
             
-            orders.append({
-                'order_number': str(row['주문번호']),
-                'product_code': str(row['제품코드']),
-                'product_name': str(row.get('제품명', '')),
-                'quantity': int(row['수량']),
-                'due_date': row['납기일'].date(),
-                'priority': int(row.get('우선순위', 1))
-            })
+            order_data = {
+                'order_number': str(row['order_number']),
+                'product_code': str(row['product_code']),
+                'product_name': str(row.get('product_name', '')),
+                'quantity': int(row['quantity']),
+                'due_date': row['due_date'].date(),
+                'priority': int(row.get('priority', 1))
+            }
+            
+            # 선택적 필드 추가
+            if 'status' in df.columns and pd.notna(row.get('status')):
+                order_data['status'] = str(row['status'])
+            if 'is_urgent' in df.columns and pd.notna(row.get('is_urgent')):
+                order_data['is_urgent'] = bool(row['is_urgent'])
+            if 'notes' in df.columns and pd.notna(row.get('notes')):
+                order_data['notes'] = str(row['notes'])
+            
+            orders.append(order_data)
         
         return orders
         

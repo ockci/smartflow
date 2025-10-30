@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Box, Download, Upload, AlarmClock, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Box, Download, Upload, AlarmClock, CheckCircle, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
@@ -124,6 +124,24 @@ export function OrderUploadPage({ onNavigate, onLogout }: OrderUploadPageProps) 
     }
   };
 
+  // 주문 삭제
+  const handleDeleteOrder = async (orderId: string, orderNumber: string) => {
+    if (!confirm(`주문 ${orderNumber}을(를) 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      await orderAPI.delete(Number(orderId));  // ← orderId를 숫자로 변환
+      toast.success('주문이 삭제되었습니다');
+      await fetchOrders();
+    } catch (error) {
+      console.error('주문 삭제 실패:', error);
+      toast.error('주문 삭제에 실패했습니다');
+    }
+  };
+  
+  
+
   // 스케줄 생성 페이지로 이동
   const handleGenerateSchedule = () => {
     if (uploadedOrders.length === 0) {
@@ -215,6 +233,7 @@ export function OrderUploadPage({ onNavigate, onLogout }: OrderUploadPageProps) 
                         <TableHead>수량</TableHead>
                         <TableHead>납기일</TableHead>
                         <TableHead>상태</TableHead>
+                        <TableHead className="text-right">작업</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -230,6 +249,16 @@ export function OrderUploadPage({ onNavigate, onLogout }: OrderUploadPageProps) 
                                 긴급
                               </span>
                             )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteOrder(order.id, order.orderNumber)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}

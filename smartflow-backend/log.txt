@@ -1,0 +1,18 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\Admin\\AIX\\Deathtiny\\smartflow-backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [17528] using WatchFiles
+INFO:     Started server process [19692]
+INFO:     Waiting for application startup.
+ERROR:    Traceback (most recent call last):
+  File "C:\Users\Admin\anaconda3\envs\310_newpro\Lib\site-packages\starlette\routing.py", line 677, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\anaconda3\envs\310_newpro\Lib\contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AIX\Deathtiny\smartflow-backend\main.py", line 18, in lifespan
+    print("\U0001f680 SmartFlow 백엔드 시작...")
+UnicodeEncodeError: 'cp949' codec can't encode character '\U0001f680' in position 0: illegal multibyte sequence
+
+ERROR:    Application startup failed. Exiting.
+INFO:     Stopping reloader process [17528]

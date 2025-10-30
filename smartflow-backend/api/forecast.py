@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 import statistics
 import requests
 from pydantic import BaseModel
+import pickle
+import numpy as np
 
 # 절대 경로로 import (api 폴더 내부)
 from database.database import get_db
@@ -18,6 +20,18 @@ from models.models import Product, Order, User
 from api.auth import get_current_user
 
 router = APIRouter(prefix="/api/ai-forecast", tags=["ai-forecast"])
+# 전역 변수
+IMPROVED_MODEL = None
+
+def load_improved_model():
+    global IMPROVED_MODEL
+    if IMPROVED_MODEL is None:
+        try:
+            with open('../smartflow-backend_ai/ai_models/smartflow_models_improved.pkl', 'rb') as f:
+                IMPROVED_MODEL = pickle.load(f)
+        except:
+            IMPROVED_MODEL = None
+    return IMPROVED_MODEL
 
 # ============================================
 # 📊 Pydantic 스키마
@@ -226,7 +240,7 @@ class HybridForecastSystem:
         will_order = zero_ratio < 0.7
         
         # Horizon에 따른 신뢰도 감소
-        confidence_map = {1: "높음", 2: "높음", 3: "중간", 4: "중간"}
+        confidence_map = {1: "중간", 2: "중간", 3: "낮음", 4: "낮음"}
         
         return HorizonForecast(
             horizon=f"T+{horizon}",
@@ -289,7 +303,7 @@ class HybridForecastSystem:
                             confidence=confidence_map.get(horizon, "중간"),
                             probability=probability
                         ),
-                        reasoning=f"Two-Stage AI 예측 (F1-Score 88.6%, MAE 3.94)"
+                        reasoning=f"개선된 AI 모델 (정확도 88.5%, MAE 15.96)"
                     )
             
             # AI 서버 호출 실패 시 폴백
@@ -299,7 +313,7 @@ class HybridForecastSystem:
             print(f"AI 서버 호출 실패: {str(e)}")
             # 에러 발생 시 통계 모델로 폴백
             return self._simple_ml_forecast(product_id, horizon, forecast_date)
-
+        
 # ============================================
 # 🚀 API 엔드포인트
 # ============================================

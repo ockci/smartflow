@@ -44,7 +44,7 @@ class OrderBase(BaseModel):
     order_number: str
     product_code: str
     product_name: Optional[str] = None
-    quantity: int = Field(..., gt=0)
+    quantity: int = Field(..., ge=0)
     due_date: date
     priority: int = Field(default=1, ge=1, le=5)
     is_urgent: bool = False
