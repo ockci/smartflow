@@ -25,7 +25,7 @@ import {
   TableRow,
 } from '../components/ui/table';
 import { toast } from 'sonner';
-import { scheduleAPI } from '../utils/api';
+import { scheduleAPI } from '../lib/api';
 import { Sidebar } from '../components/Sidebar';
 
 interface SchedulePageProps {

@@ -1,11 +1,6 @@
 """
 SmartFlow - 하이브리드 AI 발주 예측 시스템
 제품 관리와 자동 연동, 과거 데이터 부족 문제 해결
-
-Phase 1 (0-7일): 수동 입력
-Phase 2 (7-30일): 규칙 기반
-Phase 3 (30-90일): 단순 통계
-Phase 4 (90일+): Two-Stage AI
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -18,8 +13,8 @@ import requests
 from pydantic import BaseModel
 
 # 절대 경로로 import (api 폴더 내부)
-from database import get_db
-from models import Product, Order, User
+from database.database import get_db
+from models.models import Product, Order, User
 from api.auth import get_current_user
 
 router = APIRouter(prefix="/api/ai-forecast", tags=["ai-forecast"])
@@ -77,15 +72,30 @@ class HybridForecastSystem:
     
     def get_data_availability(self, product_id: int) -> DataAvailability:
         """제품별 데이터 가용성 확인"""
+        # ✅ Product 조회하여 product_code 얻기
+        product = self.db.query(Product).filter(
+            Product.id == product_id,
+            Product.user_id == self.user_id
+        ).first()
+        
+        if not product:
+            return DataAvailability(
+                days_of_data=0,
+                total_orders=0,
+                can_use_ml=False,
+                forecast_method="MANUAL"
+            )
+        
+        # ✅ product_code로 Order 조회
         orders = self.db.query(Order).filter(
-            Order.product_id == product_id,
+            Order.product_code == product.product_code,
             Order.user_id == self.user_id
         ).all()
         
         if not orders:
             days_of_data = 0
         else:
-            unique_dates = set([o.order_date.date() if hasattr(o, 'order_date') else o.created_at.date() for o in orders])
+            unique_dates = set([o.created_at.date() for o in orders])
             days_of_data = len(unique_dates)
         
         return DataAvailability(
@@ -145,9 +155,18 @@ class HybridForecastSystem:
     
     def _rule_based_forecast(self, product_id: int, horizon: int, forecast_date: datetime) -> HorizonForecast:
         """Phase 2: 규칙 기반 (최근 7일 평균)"""
+        # ✅ Product 조회
+        product = self.db.query(Product).filter(
+            Product.id == product_id,
+            Product.user_id == self.user_id
+        ).first()
+        
+        if not product:
+            return self._manual_forecast(product_id, horizon, forecast_date)
+        
         cutoff_date = datetime.now() - timedelta(days=7)
         recent_orders = self.db.query(Order).filter(
-            Order.product_id == product_id,
+            Order.product_code == product.product_code,
             Order.user_id == self.user_id,
             Order.created_at >= cutoff_date
         ).all()
@@ -178,8 +197,17 @@ class HybridForecastSystem:
     
     def _simple_ml_forecast(self, product_id: int, horizon: int, forecast_date: datetime) -> HorizonForecast:
         """Phase 3: 단순 통계 모델 (지수평활법)"""
+        # ✅ Product 조회
+        product = self.db.query(Product).filter(
+            Product.id == product_id,
+            Product.user_id == self.user_id
+        ).first()
+        
+        if not product:
+            return self._rule_based_forecast(product_id, horizon, forecast_date)
+        
         history = self.db.query(Order).filter(
-            Order.product_id == product_id,
+            Order.product_code == product.product_code,
             Order.user_id == self.user_id
         ).order_by(desc(Order.created_at)).limit(30).all()
         
@@ -198,7 +226,7 @@ class HybridForecastSystem:
         will_order = zero_ratio < 0.7
         
         # Horizon에 따른 신뢰도 감소
-        confidence_map = {1: "높음", 2: "높음", 3: "중간", 4: "보통"}
+        confidence_map = {1: "높음", 2: "높음", 3: "중간", 4: "중간"}
         
         return HorizonForecast(
             horizon=f"T+{horizon}",
@@ -206,7 +234,7 @@ class HybridForecastSystem:
             prediction=PredictionResult(
                 will_order=will_order,
                 quantity=round(forecast_value) if will_order else 0,
-                confidence=confidence_map.get(horizon, "보통"),
+                confidence=confidence_map.get(horizon, "중간"),
                 probability=(1 - zero_ratio) * 100 if will_order else 0
             ),
             reasoning=f"지수평활 예측 {forecast_value:.0f}개, Zero 비율 {zero_ratio*100:.0f}%"
@@ -229,7 +257,7 @@ class HybridForecastSystem:
             response = requests.post(
                 ai_server_url,
                 json={
-                    "product_code": product.code,
+                    "product_code": product.product_code,
                     "days": 4  # T+1 ~ T+4
                 },
                 timeout=5
@@ -244,7 +272,7 @@ class HybridForecastSystem:
                     will_order = quantity > 0
                     
                     # 신뢰도 계산 (horizon에 따라)
-                    confidence_map = {1: "높음", 2: "높음", 3: "중간", 4: "보통"}
+                    confidence_map = {1: "높음", 2: "높음", 3: "중간", 4: "중간"}
                     
                     # Zero 비율 기반 확률 계산
                     stats = ai_result.get("data", {}).get("stats", {})
@@ -258,7 +286,7 @@ class HybridForecastSystem:
                         prediction=PredictionResult(
                             will_order=will_order,
                             quantity=int(quantity) if will_order else 0,
-                            confidence=confidence_map.get(horizon, "보통"),
+                            confidence=confidence_map.get(horizon, "중간"),
                             probability=probability
                         ),
                         reasoning=f"Two-Stage AI 예측 (F1-Score 88.6%, MAE 3.94)"
@@ -315,8 +343,8 @@ def predict_product_demand(
     
     return ProductForecastResponse(
         product_id=request.product_id,
-        product_name=product.name,
-        product_code=product.code,
+        product_name=product.product_name,
+        product_code=product.product_code,
         method=availability.forecast_method,
         data_availability=availability,
         forecasts=horizons,
@@ -355,8 +383,8 @@ def batch_predict_all_products(
         
         results.append({
             "product_id": product.id,
-            "product_name": product.name,
-            "product_code": product.code,
+            "product_name": product.product_name,
+            "product_code": product.product_code,
             "method": availability.forecast_method,
             "days_of_data": availability.days_of_data,
             "can_predict": availability.forecast_method != "MANUAL"

@@ -3,7 +3,7 @@ import { Lock, Mail } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { authAPI } from '../utils/api';
+import { authAPI } from '../lib/api';
 
 interface LoginPageProps {
   onLogin: () => void;

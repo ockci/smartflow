@@ -53,7 +53,7 @@ def init_db():
     - 테이블이 없을 때만 생성
     - 기존 데이터는 보존
     """
-    from models import Base, Equipment  # ✅ 순환 import 방지
+    from models.models import Base, Equipment  # ✅ 순환 import 방지
 
     # 테이블 생성 (존재하지 않으면 자동 생성)
     Base.metadata.create_all(bind=engine)

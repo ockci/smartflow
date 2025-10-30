@@ -4,14 +4,14 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from database import get_db  # ✅ DB 세션만 여기서 가져오기
-from models import Equipment, Order, Schedule  # ✅ 모델은 models.py에서 가져오기
+from database.database import get_db  # ✅ DB 세션만 여기서 가져오기
+from models.models import Equipment, Order, Schedule  # ✅ 모델은 models.py에서 가져오기
 from datetime import datetime
 from fastapi import UploadFile
 import pandas as pd
 from io import BytesIO
 from api.auth import get_current_user  # ✅ api 폴더 안의 auth
-from models import User
+from models.models import User
 
 router = APIRouter()
 

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import { orderAPI, convertOrder, type BackendOrder } from '../utils/api';
+import { orderAPI, convertOrder, type BackendOrder } from '../lib/api';
 import { Sidebar } from '../components/Sidebar';
 
 interface Order {

@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react@0.487.0";
-import { DayPicker } from "react-day-picker@8.10.1";
+import { ChevronLeft, ChevronRight } from "lucide-react";  // ← 이거 있어야 함!
+import { DayPicker } from "react-day-picker";
 
-import { cn } from "./utils";
-import { buttonVariants } from "./button";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
 function Calendar({
   className,
@@ -60,13 +60,13 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("size-4", className)} {...props} />
-        ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("size-4", className)} {...props} />
-        ),
-      }}
+        IconLeft: ({ className, ...props }: any) => (
+        <ChevronLeft className={cn("size-4", className)} {...props} />
+      ),
+        IconRight: ({ className, ...props }: any) => (
+        <ChevronRight className={cn("size-4", className)} {...props} />
+      ),
+    } as any}
       {...props}
     />
   );

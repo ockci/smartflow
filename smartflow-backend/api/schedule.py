@@ -4,12 +4,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict
-from database import get_db  # âœ… DB ì„¸ì…˜ë§Œ databaseì—ì„œ
-from models import Schedule, Order, Equipment  # âœ… ëª¨ë¸ë“¤ì€ modelsì—ì„œ ê°€ì ¸ì˜¤ê¸°
+from database.database import get_db  # âœ… DB ì„¸ì…˜ë§Œ databaseì—ì„œ
+from models.models import Schedule, Order, Equipment  # âœ… ëª¨ë¸ë“¤ì€ modelsì—ì„œ ê°€ì ¸ì˜¤ê¸°
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from api.auth import get_current_user
-from models import User
+from models.models import User
 import time
 
 router = APIRouter()

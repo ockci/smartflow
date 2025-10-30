@@ -6,8 +6,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from database import get_db
-from models import Inventory, InventoryPolicy, Forecast, User
+from database.database import get_db
+from models.models import Inventory, InventoryPolicy, Forecast, User
 from pydantic import BaseModel
 from datetime import date, timedelta
 from api.auth import get_current_user

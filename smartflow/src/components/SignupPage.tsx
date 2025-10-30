@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { authAPI } from '../utils/api';
+import { authAPI } from '../lib/api';
 
 interface SignupPageProps {
   onSignup: () => void;

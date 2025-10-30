@@ -9,9 +9,9 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
-from database import get_db
-from models import Equipment, User
-from schemas import EquipmentCreate, Equipment as EquipmentSchema
+from database.database import get_db
+from models.models import Equipment, User
+from schemas.schemas import EquipmentCreate, Equipment as EquipmentSchema
 from api.auth import get_current_user
 from datetime import datetime
 import pandas as pd

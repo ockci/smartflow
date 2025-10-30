@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';  // 👈 추가!
+import { useState, useEffect } from 'react';
 import { 
   AlertCircle, Package, CheckCircle, AlertTriangle, TrendingUp, ShoppingCart, 
   BarChart3, Clock, Bell 
@@ -9,8 +9,8 @@ import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Sidebar } from './Sidebar';
-import { useDashboard } from '../utils/Usedashboard';
-import { inventoryAPI } from '../utils/api';
+import { useDashboard } from '@/lib/Usedashboard';  // 대문자 U!
+import { inventoryAPI } from '@/lib/api';  // 경로 수정
 import { toast } from 'sonner';
 
 interface DashboardPageProps {
@@ -18,9 +18,7 @@ interface DashboardPageProps {
   onLogout: () => void;
 }
 
-// --- 데이터 정의 (모든 목업 데이터 통합) ---
-
-// 1. 재고 아이템 데이터
+// --- 재고 아이템 데이터만 남김 ---
 interface Item {
   id: string; 
   name: string; 
@@ -31,36 +29,8 @@ interface Item {
   risk: string;
 }
 
-// 2. 오늘 생산 현황 데이터
-interface ProductionStatus {
-  id: string; 
-  machine: string; 
-  orderNumber: string; 
-  productCode: string; 
-  progress: number; 
-  estimatedCompletion: string; 
-  statusText: string;
-}
-const mockProductionStatus: ProductionStatus[] = [
-  { id: 'p1', machine: '1호기', orderNumber: 'ORD-001', productCode: 'Product_c0', progress: 80, estimatedCompletion: '16:30', statusText: '진행중' },
-  { id: 'p2', machine: '2호기', orderNumber: 'ORD-002', productCode: 'Product_c6', progress: 45, estimatedCompletion: '18:00', statusText: '진행중' },
-  { id: 'p3', machine: '3호기', orderNumber: '---', productCode: '---', progress: 0, estimatedCompletion: '---', statusText: '대기중' },
-];
-
-// 3. 납기 임박 주문 데이터
-interface UrgentOrder {
-  id: string; 
-  orderNumber: string; 
-  productCode: string; 
-  quantity: number; 
-  daysLeft: number; 
-  dueDate: string;
-}
-const mockUrgentOrders: UrgentOrder[] = [
-  { id: 'u1', orderNumber: 'ORD-005', productCode: 'Product_e5', quantity: 3000, daysLeft: 2, dueDate: '2025-11-17' },
-  { id: 'u2', orderNumber: 'ORD-008', productCode: 'Product_h2', quantity: 1200, daysLeft: 3, dueDate: '2025-11-18' },
-  { id: 'u3', orderNumber: 'ORD-007', productCode: 'Product_g1', quantity: 2500, daysLeft: 5, dueDate: '2025-11-20' },
-];
+// ❌ mockProductionStatus 삭제
+// ❌ mockUrgentOrders 삭제
 
 const statusConfig = {
   urgent: { icon: AlertCircle, color: 'bg-[#EF4444]', text: '긴급', textColor: 'text-[#EF4444]' },
@@ -69,8 +39,8 @@ const statusConfig = {
   excess: { icon: Package, color: 'bg-[#6B7280]', text: '과다', textColor: 'text-[#6B7280]' },
 };
 
-
 export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
+  // 나머지 코드는 그대로...
   // ⭐ Hook들은 여기 안에!
   const { summary, production, alerts, loading, error } = useDashboard();
   
@@ -148,7 +118,7 @@ export function DashboardPage({ onNavigate, onLogout }: DashboardPageProps) {
 
               <Card className="bg-white border border-[#E5E7EB] shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm text-[#6B7280]">완료 주문</CardTitle><CheckCircle className="w-4 h-4 text-[#6B7280]" /></CardHeader>
-                <CardContent><div className="text-2xl text-[#1F2937]">{summary?.completed_orders || 0}건</div><p className="text-xs text-[#6B7280] mt-1">전체의 {summary?.completion_rate || 0}%</p></CardContent>
+                <CardContent><div className="text-2xl text-[#1F2937]">{summary?.completed_orders || 0}건</div><p className="text-xs text-[#6B7280] mt-1">전체의 {summary?.on_time_rate || 0}%</p></CardContent>
               </Card>
 
               <Card className="bg-white border border-[#E5E7EB] shadow-md">

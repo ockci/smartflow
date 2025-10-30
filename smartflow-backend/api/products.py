@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from database import get_db
-from models import Product, User
+from database.database import get_db
+from models.models import Product, User
 from pydantic import BaseModel
 from datetime import datetime
 from api.auth import get_current_user

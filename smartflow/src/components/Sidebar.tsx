@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { LayoutDashboard, Calculator, FileText, TrendingUp, User, Settings, LogOut, HardHat, Package, Calendar, Box, Brain } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Separator } from './ui/separator';
-import { authAPI } from '../utils/api';  // ⭐ API import 추가
+import { authAPI } from '../lib/api';
 
 interface SidebarProps {
   currentPage: string;
@@ -22,18 +22,15 @@ const menuItems: MenuItem[] = [
   { id: 'products', label: '제품 관리', icon: Box },
   { id: 'orders', label: '주문 관리', icon: Package },
   { id: 'schedule', label: '스케줄링', icon: Calendar },
-  { id: 'order', label: '발주 계산', icon: Calculator },
-  { id: 'forecast', label: 'AI 예측', icon: Brain },
+  { id: 'forecast', label: 'AI 발주 시스템', icon: Brain },
   { id: 'history', label: '발주 이력', icon: FileText },
   { id: 'simulation', label: '시뮬레이션', icon: TrendingUp },
 ];
 
 export function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {
-  // ⭐ 실제 사용자 정보 상태
   const [userName, setUserName] = useState('로딩중...');
   const [companyName, setCompanyName] = useState('');
 
-  // ⭐ 컴포넌트 마운트 시 사용자 정보 가져오기
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {

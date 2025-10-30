@@ -8,7 +8,7 @@ import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Sidebar } from './Sidebar';
-import { authAPI } from '../utils/api';  // ⭐ API import 추가 (상위 폴더)
+import { authAPI } from '../lib/api';  // ⭐ API import 추가 (상위 폴더)
 
 interface MyPageProps {
   onNavigate: (page: string) => void;

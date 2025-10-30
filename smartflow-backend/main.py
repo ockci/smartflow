@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 from io import BytesIO
 import uvicorn
 
-from database import engine, Base, init_db
-from api import equipment, orders, products, forecast, schedule, dashboard, inventory, upload, auth
+from database.database import engine, Base, init_db
+from api import equipment, orders, products, forecast, schedule, dashboard, inventory, upload, auth, smart_upload
 from core.excel_parser import create_equipment_template, create_product_template, create_order_template
 
 
@@ -48,6 +48,7 @@ app.add_middleware(
 # -------------------------------
 app.include_router(equipment.router, prefix="/api/equipment", tags=["Equipment"])
 app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
+app.include_router(smart_upload.router, prefix="/api/orders", tags=["Smart Upload"])
 app.include_router(products.router, prefix="/api/products", tags=["Products"])
 app.include_router(schedule.router, prefix="/api/schedule", tags=["Schedule"])
 app.include_router(forecast.router, tags=["Forecast"])

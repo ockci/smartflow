@@ -2,7 +2,7 @@
  * 대시보드 데이터 관리 커스텀 훅
  */
 import { useState, useEffect } from 'react';
-import { dashboardAPI } from './api';
+import { dashboardAPI } from '../lib/api';
 
 export interface DashboardSummary {
   total_orders: number;
@@ -13,6 +13,7 @@ export interface DashboardSummary {
   on_time_rate: number;
   equipment_utilization: number;
   alerts_count: number;
+  low_stock_items?: number;
 }
 
 export interface ProductionStatus {

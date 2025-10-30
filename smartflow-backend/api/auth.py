@@ -10,9 +10,9 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from typing import Optional
 
-from database import get_db
-from schemas import UserCreate, User, Token, TokenData
-from models import User as UserModel
+from database.database import get_db
+from schemas.schemas import UserCreate, User, Token, TokenData
+from models.models import User as UserModel
 
 # 설정
 SECRET_KEY = "your-secret-key-change-this-in-production"  # ⚠️ 프로덕션에서는 환경변수로 변경

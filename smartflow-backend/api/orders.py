@@ -4,11 +4,11 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
-from database import get_db
-from models import Order
-from schemas import OrderCreate, Order as OrderSchema
+from database.database import get_db
+from models.models import Order
+from schemas.schemas import OrderCreate, Order as OrderSchema
 from api.auth import get_current_user
-from models import User
+from models.models import User
 from fastapi import APIRouter, Response
 from fastapi.responses import FileResponse
 import os

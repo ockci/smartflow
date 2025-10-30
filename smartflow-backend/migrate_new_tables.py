@@ -1,8 +1,8 @@
 """
 DB 마이그레이션: Product, BOM, InventoryTransaction 테이블 추가
 """
-from database import engine, Base
-from models import Product, BOM, InventoryTransaction
+from database.database import engine, Base
+from models.models import Product, BOM, InventoryTransaction
 
 def migrate():
     """새로운 테이블들을 데이터베이스에 추가"""
