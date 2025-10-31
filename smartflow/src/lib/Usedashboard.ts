@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { dashboardAPI } from '../lib/api';
 
 export interface DashboardSummary {
+  // 기존 필드들 (호환성 유지)
   total_orders: number;
   pending_orders: number;
   in_progress_orders: number;
@@ -13,7 +14,12 @@ export interface DashboardSummary {
   on_time_rate: number;
   equipment_utilization: number;
   alerts_count: number;
-  low_stock_items?: number;
+  
+  // 새로 추가된 필드들
+  today_order_needed?: number;      // AI 예측 T+1
+  tomorrow_demand?: number;         // AI 예측 T+2
+  today_production?: number;        // 오늘 생산 예정
+  due_soon?: number;                // 납기 임박 (3일 이내)
 }
 
 export interface ProductionStatus {

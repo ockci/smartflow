@@ -369,8 +369,8 @@ export const scheduleAPI = {
    * 스케줄 결과 조회
    */
   getResult: async () => {
-    const response = await apiClient.get('/api/schedule/result');
-    return response.data;  // { success, data: { schedule, metrics } }
+  const response = await apiClient.get('/api/schedule/list');  // ← /list로 변경
+  return response.data;
   },
 
   /**
