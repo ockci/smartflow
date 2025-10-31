@@ -1,3 +1,6 @@
+# SmartFlow Main Backend Requirements
+# 위치: smartflow-backend/requirements.txt
+
 # Core Framework
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
@@ -19,7 +22,10 @@ openpyxl==3.1.2
 python-dateutil==2.8.2
 numpy==1.26.2
 
-# Optional: AI/ML (필요시 주석 해제)
-# scikit-learn==1.3.2
-# scipy==1.11.4
-# joblib==1.3.2
+# HTTP Client (AI 서버 호출용)
+requests==2.31.0
+
+# Optional: Light ML for simple forecasting
+scikit-learn==1.3.2
+scipy==1.11.4
+joblib==1.3.2
