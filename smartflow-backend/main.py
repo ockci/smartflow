@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from contextlib import asynccontextmanager
 from io import BytesIO
 import uvicorn
+from api.simulation import router as simulation_router
 
 from database.database import engine, Base, init_db
 from api import equipment, orders, products, forecast, schedule, dashboard, inventory, upload, auth, smart_upload
@@ -56,6 +57,7 @@ app.include_router(inventory.router, prefix="/api/inventory", tags=["Inventory"]
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(upload.router, prefix="/api", tags=["Upload"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
+app.include_router(simulation_router, prefix="/api/simulation", tags=["Simulation"])
 
 
 # -------------------------------

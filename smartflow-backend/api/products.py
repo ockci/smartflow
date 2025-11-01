@@ -53,6 +53,11 @@ def get_product_list(db: Session = Depends(get_db), current_user: User = Depends
     products = db.query(Product).filter(Product.user_id == current_user.id).all()
     return products
 
+@router.get("/", response_model=List[ProductResponse])
+def get_products(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """제품 목록 조회"""
+    products = db.query(Product).filter(Product.user_id == current_user.id).all()
+    return products
 
 @router.post("/create", response_model=ProductResponse)
 def create_product(product: ProductCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

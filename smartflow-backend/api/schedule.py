@@ -98,7 +98,7 @@ def generate_schedule(
                 'capacity_per_hour': eq.capacity_per_hour,
                 'shift_start': eq.shift_start,
                 'shift_end': eq.shift_end,
-                'status': eq.status
+                'status': eq.status,
             }
             for eq in equipment_list
         ]
@@ -246,7 +246,8 @@ def list_schedules(
             "start_time": s.start_time.isoformat(),
             "end_time": s.end_time.isoformat(),
             "duration_minutes": s.duration_minutes,
-            "is_on_time": s.is_on_time
+            "is_on_time": s.is_on_time,
+            "status": s.status or "planned"
         })
     
     return {

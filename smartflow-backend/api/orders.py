@@ -41,6 +41,91 @@ def get_orders(
     orders = query.order_by(Order.created_at.desc()).all()
     return orders
 
+# orders.py에 추가할 코드
+# Line 43 다음에 이 코드를 추가하세요
+
+@router.get("/history")
+def get_order_history(
+    status: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    search: str | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    주문 이력 조회 (필터 + 통계)
+    
+    Parameters:
+    - status: 주문 상태 필터 (pending, confirmed, delivered, cancelled)
+    - start_date: 시작일 (YYYY-MM-DD)
+    - end_date: 종료일 (YYYY-MM-DD)  
+    - search: 검색어 (제품명, 주문번호)
+    """
+    from sqlalchemy import or_
+    from datetime import datetime, timedelta
+    
+    # 기본 쿼리 (현재 사용자만)
+    query = db.query(Order).filter(Order.user_id == current_user.id)
+    
+    # 상태 필터
+    if status:
+        query = query.filter(Order.status == status)
+    
+    # 날짜 범위 필터
+    if start_date:
+        query = query.filter(Order.created_at >= start_date)
+    if end_date:
+        # end_date는 해당일 23:59:59까지 포함
+        end_datetime = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+        query = query.filter(Order.created_at < end_datetime)
+    
+    # 검색 필터 (제품명 or 주문번호 or 제품코드)
+    if search:
+        query = query.filter(
+            or_(
+                Order.product_name.contains(search),
+                Order.product_code.contains(search),
+                Order.order_number.contains(search)
+            )
+        )
+    
+    # 주문 목록 조회
+    orders = query.order_by(Order.created_at.desc()).all()
+    
+    # 통계 계산 (전체 주문 대상)
+    all_orders = db.query(Order).filter(Order.user_id == current_user.id).all()
+    
+    # ✅ unit_price 없이 수량만으로 통계 계산
+    statistics = {
+        "total_quantity": sum(o.quantity for o in all_orders if o.status != 'cancelled'),
+        "total_count": len(all_orders),
+        "delivered_count": len([o for o in all_orders if o.status == 'delivered']),
+        "confirmed_count": len([o for o in all_orders if o.status == 'confirmed']),
+        "pending_count": len([o for o in all_orders if o.status == 'pending']),
+        "cancelled_count": len([o for o in all_orders if o.status == 'cancelled']),
+    }
+    
+    # 응답
+    return {
+        "orders": [
+            {
+                "id": o.id,
+                "order_number": o.order_number,
+                "product_code": o.product_code,
+                "product_name": o.product_name,
+                "quantity": o.quantity,
+                "order_date": o.created_at.strftime('%Y-%m-%d') if o.created_at else None,
+                "due_date": o.due_date.strftime('%Y-%m-%d') if o.due_date else None,
+                "status": o.status,
+                "priority": o.priority,
+            }
+            for o in orders
+        ],
+        "statistics": statistics
+    }
+
+
 @router.get("/{order_id}", response_model=OrderSchema)
 def get_order(
     order_id: int,
