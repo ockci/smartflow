@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Calculator, FileText, TrendingUp, User, Settings, LogOut, HardHat, Package, Calendar, Box, Brain, ShoppingCart } from 'lucide-react';
+import { LayoutDashboard, FileText, TrendingUp, User, LogOut, HardHat, Package, Calendar, Box, Brain, ShoppingCart } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Separator } from './ui/separator';
 import { authAPI } from '../lib/api';
