@@ -75,6 +75,7 @@ export function EquipmentPage({ onNavigate, onLogout }: EquipmentPageProps) {
 
     try {
       setIsUploading(true);
+      toast.info('📂 엑셀 파일 업로드 중...', { duration: 2000 });
       toast.info('엑셀 파일 업로드 중...');
       
       const result = await equipmentAPI.uploadExcel(file);

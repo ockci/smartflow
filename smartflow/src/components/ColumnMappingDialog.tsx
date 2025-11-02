@@ -51,6 +51,7 @@ export const ColumnMappingDialog: React.FC<ColumnMappingDialogProps> = ({
     }
 
     setConfirming(true);
+    toast.info('📊 데이터 분석 중... 잠시만 기다려주세요', { duration: 3000 });
     try {
       const token = localStorage.getItem('accessToken');
       
@@ -327,7 +328,7 @@ export const ColumnMappingDialog: React.FC<ColumnMappingDialogProps> = ({
             disabled={!mapping.product_code || !mapping.quantity || !mapping.order_date || confirming}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm"
           >
-            {confirming ? '업로드 중...' : `✅ 확인 (${previewData.total_rows}개 업로드)`}
+            {confirming ? '분석 중...' : `확인 및 업로드 (${previewData.total_rows}개)`}
           </Button>
         </DialogFooter>
       </DialogContent>

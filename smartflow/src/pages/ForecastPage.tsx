@@ -288,6 +288,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
 
   const predictProduct = async (productId: number) => {
     setLoading(true);
+    toast.info('🤖 AI 분석 중입니다... 잠시만 기다려주세요', { duration: 3000 });
     try {
       const token = localStorage.getItem('accessToken');
       const response = await fetch('http://localhost:8000/api/ai-forecast/predict', {
@@ -306,6 +307,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
       const data = await response.json();
       setForecast(data);
       setShowCalculation(true);
+      toast.success('✅ AI 예측이 완료되었습니다!');
     } catch (error) {
       console.error('예측 실패:', error);
       toast.error('예측에 실패했습니다. 다시 시도해주세요.');
