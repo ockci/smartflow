@@ -79,30 +79,53 @@ def get_embeddings(sequences, encoder, device, batch_size=512):
 class SmartFlowModelLoader:
     """모델 패키지 로드 및 관리"""
     
-    def __init__(self):
+    def __init__(self, company_name: str = None):
         self.package = None
         self.encoder = None
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model_paths = [
-            "./ai_models/smartflow_final_custom.pkl",
-            "../smartflow-backend_ai/ai_models/smartflow_final_custom.pkl",
-            "/mnt/user-data/uploads/smartflow_final_custom.pkl",
-        ]
+        self.company_name = company_name  # ← 추가
         self.encoder_paths = [
             "./ai_models/encoder_custom.pth",
             "../smartflow-backend_ai/ai_models/encoder_custom.pth",
         ]
-        self._load_model()
+        if company_name:
+            self._load_model(company_name)
     
-    def _load_model(self):
-        """모델 패키지 로드"""
-        for path in self.model_paths:
+    def _load_model(self, company_name: str):
+    
+    # 회사별 모델 경로
+        company_model_paths = [
+            f"./ai_models/companies/{company_name}_model.pkl",
+            f"../smartflow-backend_ai/ai_models/companies/{company_name}_model.pkl",
+        ]
+    
+    # 기본 모델 경로 (회사 모델 없을 때)
+        base_model_paths = [
+            "./ai_models/smartflow_final_custom.pkl",
+            "../smartflow-backend_ai/ai_models/smartflow_final_custom.pkl",
+        ]
+    
+    # 1. 회사 모델 먼저 찾기
+        for path in company_model_paths:
             if os.path.exists(path):
                 try:
                     with open(path, 'rb') as f:
                         self.package = pickle.load(f)
-                    print(f"✅ 모델 로드 성공: {path}")
-                    break
+                    print(f"✅ {company_name} 전용 모델 로드: {path}")
+                    return
+                except Exception as e:
+                    print(f"❌ {path} 로드 실패: {e}")
+                    continue
+    
+    # 2. 없으면 기본 모델 사용
+        print(f"⚠️ {company_name} 모델 없음 → 기본 모델 사용")
+        for path in base_model_paths:
+            if os.path.exists(path):
+                try:
+                    with open(path, 'rb') as f:
+                        self.package = pickle.load(f)
+                    print(f"✅ 기본 모델 로드: {path}")
+                    return
                 except Exception as e:
                     print(f"❌ {path} 로드 실패: {e}")
                     continue
@@ -452,11 +475,18 @@ def full_inventory_analysis(request: dict):
 @app.post("/api/forecast/predict")
 def predict_demand(request: dict):
     """
-    간단한 수요 예측 (호환성 유지)
+    회사별 수요 예측
     """
     try:
         product_code = request.get('product_code')
+        company_name = request.get('company_name')  # ← 추가
         days = request.get('days', 4)
+        
+        # 회사별 모델 로드
+        if company_name:
+            company_loader = SmartFlowModelLoader(company_name)
+        else:
+            company_loader = model_loader  # 기존 글로벌 로더
         
         # 더미 데이터 생성
         historical_data = list(np.random.randint(40, 80, 14))

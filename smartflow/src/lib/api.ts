@@ -437,7 +437,14 @@ export const forecastAPI = {
     start_date: string;
     days: number;
   }) => {
-    const response = await apiClient.post<ForecastResult>('/api/forecast/predict', data);
+    // localStorage에서 사용자 정보 가져오기
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+  
+    const response = await apiClient.post<ForecastResult>('/api/forecast/predict', {
+      ...data,
+      company_name: user?.company_name  // ← 회사명 추가
+    });
     return response.data;
   },
 
