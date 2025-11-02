@@ -231,3 +231,32 @@ class InventoryTransaction(Base):
     reference_id = Column(String(50), nullable=True)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+
+# -------------------------------
+# 발주(PurchaseOrder) 모델
+# -------------------------------
+class PurchaseOrder(Base):
+    """발주 정보 테이블"""
+    __tablename__ = "purchase_orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    purchase_number = Column(String(50), index=True)  # 발주번호
+    product_code = Column(String(50), index=True)
+    product_name = Column(String(100))
+    quantity = Column(Integer)
+    supplier = Column(String(100), nullable=True)  # 공급업체
+    unit_price = Column(Float, nullable=True)  # 단가
+    total_price = Column(Float, nullable=True)  # 총액
+    order_date = Column(Date)  # 발주일
+    expected_date = Column(Date, nullable=True)  # 입고 예정일
+    status = Column(String(20), default="pending")  # pending, ordered, received
+    is_ai_recommended = Column(Boolean, default=False)  # AI 추천 여부
+    priority = Column(Integer, default=3)  # 1:높음, 2:중간, 3:낮음
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User")

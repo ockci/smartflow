@@ -12,8 +12,9 @@ import { OrderUploadPage } from './pages/OrderUploadPage';
 import { SchedulePage } from './pages/SchedulePage';
 import { ForecastPage } from './pages/ForecastPage';
 import { ProductManagementPage } from './pages/ProductManagementPage';
+import { PurchaseOrderPage } from './components/PurchaseOrderPage';
 
-type Page = 'login' | 'signup' | 'dashboard' | 'order' | 'simulation' | 'history' | 'mypage' | 'equipment' | 'orders' | 'schedule' | 'forecast' | 'products';
+type Page = 'login' | 'signup' | 'dashboard' | 'order' | 'simulation' | 'history' | 'mypage' | 'equipment' | 'orders' | 'schedule' | 'forecast' | 'products' | 'purchase';
 
 
 export default function App() {
@@ -97,6 +98,7 @@ export default function App() {
           {currentPage === 'schedule' && <SchedulePage onNavigate={handleNavigate} onLogout={handleLogout} />}
           {currentPage === 'forecast' && <ForecastPage onNavigate={handleNavigate} onLogout={handleLogout} />}
           {currentPage === 'products' && <ProductManagementPage onNavigate={handleNavigate} onLogout={handleLogout} />}
+          {currentPage === 'purchase' && <PurchaseOrderPage onNavigate={handleNavigate} onLogout={handleLogout} />}
         </>
       )}
 

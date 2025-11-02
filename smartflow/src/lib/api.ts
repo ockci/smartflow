@@ -343,6 +343,41 @@ export const orderAPI = {
     const response = await apiClient.delete(`/api/orders/delete/${id}`);
     return response.data;
   },
+
+  /**
+   * 주문 상태 업데이트
+   */
+  updateStatus: async (orderId: number, status: string) => {
+    const response = await apiClient.put(`/api/orders/update-status/${orderId}?status=${status}`);
+    return response.data;
+  },
+
+  /**
+   * 여러 주문 일괄 완료 처리
+   */
+  completeBatch: async (orderIds: number[]) => {
+    const response = await apiClient.post('/api/orders/complete-batch', { order_ids: orderIds });
+    return response.data;
+  },
+
+  /**
+   * 생산 시작
+   */
+  startProduction: async (orderId: number) => {
+    const response = await apiClient.post(`/api/orders/start-production/${orderId}`);
+    return response.data;
+  },
+
+  /**
+   * 재고 확인
+   */
+  checkInventory: async (productCode: string, quantity: number) => {
+    const response = await apiClient.post('/api/orders/check-inventory', {
+      product_code: productCode,
+      quantity: quantity
+    });
+    return response.data;
+  },
 };
 
 
@@ -587,6 +622,86 @@ export const convertScheduleForGantt = (backend: BackendSchedule, index: number)
   };
 };
 
+
+// ============================================================================
+// 발주 관리 API
+// ============================================================================
+
+export const purchaseOrderAPI = {
+  /**
+   * 발주 목록 조회
+   */
+  list: async () => {
+    const response = await apiClient.get('/api/purchase-orders/list');
+    return response.data;
+  },
+
+  /**
+   * 발주 등록
+   */
+  create: async (data: {
+    purchase_number: string;
+    product_code: string;
+    product_name: string;
+    quantity: number;
+    supplier?: string | null;
+    unit_price?: number | null;
+    order_date: string;
+    expected_date?: string | null;
+    priority?: number;
+    is_ai_recommended?: boolean;
+    notes?: string | null;
+  }) => {
+    const response = await apiClient.post('/api/purchase-orders/create', data);
+    return response.data;
+  },
+
+  /**
+   * 발주 상태 업데이트
+   */
+  updateStatus: async (purchaseId: number, status: string) => {
+    const response = await apiClient.put(`/api/purchase-orders/update-status/${purchaseId}?status=${status}`);
+    return response.data;
+  },
+
+  /**
+   * 발주 삭제
+   */
+  delete: async (purchaseId: number) => {
+    const response = await apiClient.delete(`/api/purchase-orders/delete/${purchaseId}`);
+    return response.data;
+  },
+
+  /**
+   * AI 추천 발주 목록
+   */
+  getAIRecommendations: async () => {
+    const response = await apiClient.get('/api/purchase-orders/ai-recommendations');
+    return response.data;
+  },
+
+  /**
+   * 엑셀 업로드
+   */
+  uploadExcel: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await apiClient.post('/api/purchase-orders/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  /**
+   * 템플릿 다운로드
+   */
+  downloadTemplate: () => {
+    return `${apiClient.defaults.baseURL}/api/purchase-orders/download/template`;
+  },
+};
 
 
 export default apiClient;

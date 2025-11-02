@@ -42,6 +42,7 @@ export function OrderHistoryPage({ onNavigate, onLogout }: OrderHistoryPageProps
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+  
 
   useEffect(() => {
     fetchOrders();
@@ -61,6 +62,39 @@ export function OrderHistoryPage({ onNavigate, onLogout }: OrderHistoryPageProps
     }
   };
 
+  // const handleStatusChange = async (orderId: number, newStatus: string) => {
+  //   try {
+  //     await orderAPI.updateStatus(orderId, newStatus);
+  //     toast.success(`주문 상태가 '${newStatus}'로 변경되었습니다`);
+  //     fetchOrders(); // 목록 새로고침
+  //   } catch (error) {
+  //     console.error('상태 업데이트 실패:', error);
+  //     toast.error('상태 업데이트에 실패했습니다');
+  //   }
+  // };
+
+  const handleCompleteOrder = async (orderId: number) => {
+    try {
+      await orderAPI.updateStatus(orderId, 'completed');
+      toast.success('주문이 완료 처리되었습니다');
+      fetchOrders();
+    } catch (error) {
+      console.error('완료 처리 실패:', error);
+      toast.error('완료 처리에 실패했습니다');
+    }
+  };
+
+  const handleStartProduction = async (orderId: number) => {
+    try {
+      await orderAPI.startProduction(orderId);
+      toast.success('생산이 시작되었습니다');
+      fetchOrders();
+    } catch (error) {
+      console.error('생산 시작 실패:', error);
+      toast.error('생산 시작에 실패했습니다');
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
       (order.product_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -73,6 +107,7 @@ export function OrderHistoryPage({ onNavigate, onLogout }: OrderHistoryPageProps
   const pendingCount = orders.filter(o => o.status === 'pending').length;
   const confirmedCount = orders.filter(o => o.status === 'confirmed').length;
   const completedCount = orders.filter(o => o.status === 'completed').length;
+  const inProductionCount = orders.filter(o => o.status === 'in_production').length;
   const totalQuantity = orders.reduce((sum, order) => sum + order.quantity, 0);
 
   return (
@@ -127,11 +162,11 @@ export function OrderHistoryPage({ onNavigate, onLogout }: OrderHistoryPageProps
             <Card className="bg-white border border-[#E5E7EB] hover:shadow-lg transition-all duration-200">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-[#6B7280]">진행중</p>
-                  <CheckCircle className="w-5 h-5 text-[#2563EB]" />
+                  <p className="text-sm text-[#6B7280]">생산중</p>
+                  <Clock className="w-5 h-5 text-[#3B82F6]" />
                 </div>
-                <p className="text-3xl text-[#2563EB] mb-1">{confirmedCount}건</p>
-                <p className="text-xs text-[#6B7280]">주문 확인됨</p>
+                <p className="text-3xl text-[#3B82F6] mb-1">{inProductionCount}건</p>
+                <p className="text-xs text-[#6B7280]">생산 진행중</p>
               </CardContent>
             </Card>
             <Card className="bg-white border border-[#E5E7EB] hover:shadow-lg transition-all duration-200">
@@ -191,6 +226,7 @@ export function OrderHistoryPage({ onNavigate, onLogout }: OrderHistoryPageProps
                     <th className="px-6 py-4 text-left text-sm font-semibold text-[#6B7280]">우선순위</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-[#6B7280]">상태</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-[#6B7280]">생성일</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-[#6B7280]">액션</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -234,6 +270,7 @@ export function OrderHistoryPage({ onNavigate, onLogout }: OrderHistoryPageProps
                           <td className="px-6 py-4 text-sm text-[#6B7280]">
                             {new Date(order.due_date).toLocaleDateString('ko-KR')}
                           </td>
+                          
                           <td className="px-6 py-4">
                             <span className={`px-2 py-1 rounded text-xs font-semibold ${
                               order.priority === 1 ? 'bg-red-100 text-red-700' :
@@ -252,6 +289,33 @@ export function OrderHistoryPage({ onNavigate, onLogout }: OrderHistoryPageProps
                           </td>
                           <td className="px-6 py-4 text-sm text-[#6B7280]">
                             {new Date(order.created_at).toLocaleDateString('ko-KR')}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              {order.status === 'pending' && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleStartProduction(order.id)}
+                                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs"
+                                >
+                                  생산 시작
+                                </Button>
+                              )}
+                              {order.status === 'in_production' && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleCompleteOrder(order.id)}
+                                  className="bg-green-500 hover:bg-green-600 text-white text-xs"
+                                >
+                                  완료 처리
+                                </Button>
+                              )}
+                              {order.status === 'completed' && (
+                                <Badge className="bg-gray-200 text-gray-600 text-xs">
+                                  완료됨
+                                </Badge>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );

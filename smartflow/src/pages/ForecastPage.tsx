@@ -800,39 +800,66 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
                   </div>
 
                   {/* 발주 확정 버튼 */}
-                  <div className="flex gap-4">
-                    <Button 
-                      onClick={handleOrderConfirm}
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-lg py-6"
-                    >
-                      <ShoppingCart className="h-5 w-5 mr-2" />
-                      발주 확정 ({orderQuantity.toLocaleString()}개)
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => {
-                        setCurrentStock(0);
-                        setLeadTime(7);
-                        setSafetyStock(200);
-                      }}
-                    >
-                      초기화
-                    </Button>
+              <div className="flex gap-4">
+                <Button 
+                  onClick={handleOrderConfirm}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-lg py-6"
+                >
+                  <ShoppingCart className="h-5 w-5 mr-2" />
+                  발주 확정 ({orderQuantity.toLocaleString()}개)
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setCurrentStock(0);
+                    setLeadTime(7);
+                    setSafetyStock(200);
+                  }}
+                >
+                  초기화
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 권장 사항 */}
+          <Alert>
+            <Lightbulb className="h-4 w-4" />
+            <AlertDescription>{forecast.recommendation}</AlertDescription>
+          </Alert>
+
+          {/* AI 발주 추천 섹션 */}
+          {forecast.forecasts.some(f => f.prediction.probability >= 0.7) && (
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <ShoppingCart className="w-6 h-6 text-blue-600" />
+                  <h3 className="text-lg font-bold text-gray-800">🤖 AI 발주 추천</h3>
+                </div>
+                <div className="bg-white p-4 rounded-lg mb-4">
+                  <p className="text-sm text-gray-600 mb-2">
+                    이 제품은 <span className="font-bold text-blue-600">재고 부족이 예상</span>됩니다.
+                  </p>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-gray-700">추천 발주량:</span>
+                    <span className="text-2xl font-bold text-blue-600">{orderQuantity.toLocaleString()}개</span>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* 권장 사항 */}
-              <Alert>
-                <Lightbulb className="h-4 w-4" />
-                <AlertDescription>{forecast.recommendation}</AlertDescription>
-              </Alert>
-            </>
+                </div>
+                <Button
+                  onClick={() => onNavigate('purchase')}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  발주 관리로 이동
+                </Button>
+                <p className="text-xs text-gray-500 mt-3 text-center">
+                  💡 자동 발주 기능은 추후 업데이트 예정입니다
+                </p>
+              </CardContent>
+            </Card>
           )}
-        </div>
-      </div>
+        </>
+      )}
 
-      {/* 컬럼 매핑 모달 */}
       {previewData && (
         <ColumnMappingDialog
           isOpen={showMappingDialog}
@@ -845,5 +872,7 @@ export const ForecastPage: React.FC<ForecastPageProps> = ({ onNavigate, onLogout
         />
       )}
     </div>
+  </div>
+</div>
   );
 };

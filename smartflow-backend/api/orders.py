@@ -326,3 +326,285 @@ async def upload_orders(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"업로드 실패: {str(e)}")
+    
+
+
+# orders.py에 추가
+
+@router.put("/update-status/{order_id}")
+def update_order_status(
+    order_id: int,
+    status: str,  # pending, in_production, completed, cancelled
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    주문 상태 업데이트
+    """
+    order = db.query(Order).filter(
+        Order.id == order_id,
+        Order.user_id == current_user.id
+    ).first()
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="주문을 찾을 수 없습니다")
+    
+    order.status = status
+    order.updated_at = datetime.now()
+    
+    db.commit()
+    db.refresh(order)
+    
+    return {
+        "success": True,
+        "message": f"주문 상태가 '{status}'로 변경되었습니다",
+        "order": {
+            "id": order.id,
+            "order_number": order.order_number,
+            "status": order.status
+        }
+    }
+
+
+# orders.py 맨 끝에 추가 (line 328 이후)
+
+
+# ============================================================================
+# 주문 상태 관리 API (신규 추가)
+# ============================================================================
+
+@router.put("/update-status/{order_id}")
+def update_order_status(
+    order_id: int,
+    status: str,  # pending, in_production, completed, cancelled
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    주문 상태 업데이트
+    
+    사용 예시:
+    - pending → in_production (생산 시작)
+    - in_production → completed (생산 완료)
+    - pending → cancelled (주문 취소)
+    """
+    # 유효한 상태 목록
+    valid_statuses = ["pending", "in_production", "completed", "cancelled"]
+    
+    if status not in valid_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"올바르지 않은 상태입니다. 가능한 상태: {', '.join(valid_statuses)}"
+        )
+    
+    # 주문 조회
+    order = db.query(Order).filter(
+        Order.id == order_id,
+        Order.user_id == current_user.id
+    ).first()
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="주문을 찾을 수 없습니다")
+    
+    # 이전 상태 저장 (로그용)
+    old_status = order.status
+    
+    # 상태 업데이트
+    order.status = status
+    order.updated_at = datetime.now()
+    
+    db.commit()
+    db.refresh(order)
+    
+    print(f"✅ 주문 상태 변경: {order.order_number} ({old_status} → {status})")
+    
+    return {
+        "success": True,
+        "message": f"주문 상태가 '{status}'로 변경되었습니다",
+        "data": {
+            "id": order.id,
+            "order_number": order.order_number,
+            "old_status": old_status,
+            "new_status": order.status,
+            "updated_at": order.updated_at.isoformat()
+        }
+    }
+
+
+@router.post("/complete-batch")
+def complete_orders_batch(
+    order_ids: list[int],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    여러 주문 일괄 완료 처리
+    
+    사용 예시:
+    POST /api/orders/complete-batch
+    {
+        "order_ids": [1, 2, 3, 4, 5]
+    }
+    """
+    if not order_ids:
+        raise HTTPException(status_code=400, detail="주문 ID가 필요합니다")
+    
+    updated_orders = []
+    failed_orders = []
+    
+    for order_id in order_ids:
+        order = db.query(Order).filter(
+            Order.id == order_id,
+            Order.user_id == current_user.id
+        ).first()
+        
+        if order:
+            order.status = "completed"
+            order.updated_at = datetime.now()
+            updated_orders.append(order.order_number)
+        else:
+            failed_orders.append(order_id)
+    
+    db.commit()
+    
+    print(f"✅ 일괄 완료 처리: {len(updated_orders)}개 성공, {len(failed_orders)}개 실패")
+    
+    return {
+        "success": True,
+        "message": f"{len(updated_orders)}개 주문이 완료 처리되었습니다",
+        "data": {
+            "updated_count": len(updated_orders),
+            "failed_count": len(failed_orders),
+            "updated_orders": updated_orders,
+            "failed_order_ids": failed_orders
+        }
+    }
+
+
+@router.post("/start-production/{order_id}")
+def start_production(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    생산 시작 (상태를 in_production으로 변경)
+    
+    편의 함수 - update-status를 직접 호출해도 됨
+    """
+    order = db.query(Order).filter(
+        Order.id == order_id,
+        Order.user_id == current_user.id
+    ).first()
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="주문을 찾을 수 없습니다")
+    
+    if order.status != "pending":
+        raise HTTPException(
+            status_code=400,
+            detail=f"대기 중인 주문만 생산을 시작할 수 있습니다 (현재 상태: {order.status})"
+        )
+    
+    order.status = "in_production"
+    order.updated_at = datetime.now()
+    
+    db.commit()
+    db.refresh(order)
+    
+    print(f"🏭 생산 시작: {order.order_number}")
+    
+    return {
+        "success": True,
+        "message": f"주문 {order.order_number}의 생산이 시작되었습니다",
+        "data": {
+            "id": order.id,
+            "order_number": order.order_number,
+            "status": order.status
+        }
+    }
+
+
+# orders.py 맨 끝에 추가 (위 코드 다음)
+
+
+# ============================================================================
+# 재고 연동 API (신규 추가)
+# ============================================================================
+
+@router.post("/check-inventory")
+def check_inventory_before_order(
+    product_code: str,
+    quantity: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    주문 전 재고 확인
+    
+    사용 예시:
+    POST /api/orders/check-inventory
+    {
+        "product_code": "PROD001",
+        "quantity": 1000
+    }
+    
+    반환:
+    {
+        "available": true/false,
+        "current_stock": 5000,
+        "requested": 1000,
+        "remaining": 4000,
+        "warning": "재고가 부족합니다"
+    }
+    """
+    from models.models import Inventory
+    
+    # 재고 조회
+    inventory = db.query(Inventory).filter(
+        Inventory.product_code == product_code,
+        Inventory.user_id == current_user.id
+    ).first()
+    
+    if not inventory:
+        # 재고 정보 없음 → 경고만 표시
+        return {
+            "available": None,  # 알 수 없음
+            "current_stock": 0,
+            "requested": quantity,
+            "remaining": None,
+            "warning": f"제품 {product_code}의 재고 정보가 없습니다. 재고 관리에서 등록해주세요.",
+            "status": "no_inventory_data"
+        }
+    
+    current_stock = inventory.current_stock or 0
+    remaining = current_stock - quantity
+    
+    # 재고 충분 여부 판단
+    if remaining >= 0:
+        return {
+            "available": True,
+            "current_stock": current_stock,
+            "requested": quantity,
+            "remaining": remaining,
+            "message": "재고가 충분합니다",
+            "status": "ok"
+        }
+    elif remaining >= -inventory.safety_stock:
+        return {
+            "available": True,
+            "current_stock": current_stock,
+            "requested": quantity,
+            "remaining": remaining,
+            "warning": f"⚠️ 안전재고({inventory.safety_stock})를 초과합니다. 발주가 필요합니다.",
+            "status": "low_stock"
+        }
+    else:
+        return {
+            "available": False,
+            "current_stock": current_stock,
+            "requested": quantity,
+            "remaining": remaining,
+            "warning": f"❌ 재고가 부족합니다! (부족: {abs(remaining)}개)",
+            "status": "insufficient"
+        }

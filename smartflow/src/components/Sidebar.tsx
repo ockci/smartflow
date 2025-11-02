@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Calculator, FileText, TrendingUp, User, Settings, LogOut, HardHat, Package, Calendar, Box, Brain } from 'lucide-react';
+import { LayoutDashboard, Calculator, FileText, TrendingUp, User, Settings, LogOut, HardHat, Package, Calendar, Box, Brain, ShoppingCart } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Separator } from './ui/separator';
 import { authAPI } from '../lib/api';
@@ -22,8 +22,9 @@ const menuItems: MenuItem[] = [
   { id: 'products', label: '제품 관리', icon: Box },
   { id: 'orders', label: '주문 관리', icon: Package },
   { id: 'schedule', label: '스케줄링', icon: Calendar },
-  { id: 'forecast', label: 'AI 발주 시스템', icon: Brain },
-  { id: 'history', label: '발주 이력', icon: FileText },
+  { id: 'forecast', label: 'AI 예측', icon: Brain },
+  { id: 'purchase', label: '발주 관리', icon: ShoppingCart },
+  { id: 'history', label: '주문 이력', icon: FileText },
   { id: 'simulation', label: '시뮬레이션', icon: TrendingUp },
 ];
 

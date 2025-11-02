@@ -7,7 +7,7 @@ import uvicorn
 from api.simulation import router as simulation_router
 
 from database.database import engine, Base, init_db
-from api import equipment, orders, products, forecast, schedule, dashboard, inventory, upload, auth, smart_upload
+from api import equipment, orders, products, forecast, schedule, dashboard, inventory, upload, auth, smart_upload, purchase_orders
 from core.excel_parser import create_equipment_template, create_product_template, create_order_template
 
 
@@ -58,6 +58,7 @@ app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"]
 app.include_router(upload.router, prefix="/api", tags=["Upload"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(simulation_router, prefix="/api/simulation", tags=["Simulation"])
+app.include_router(purchase_orders.router)
 
 
 # -------------------------------
