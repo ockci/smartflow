@@ -711,4 +711,33 @@ export const purchaseOrderAPI = {
 };
 
 
+
+// ============================================================================
+// 샘플 데이터 다운로드 API (api.ts 맨 끝에 추가)
+// ============================================================================
+
+export const sampleAPI = {
+  /**
+   * 샘플 주문 데이터 다운로드
+   */
+  downloadSampleOrders: () => {
+    return `${apiClient.defaults.baseURL}/api/samples/orders`;
+  },
+
+  /**
+   * 샘플 제품 데이터 다운로드
+   */
+  downloadSampleProducts: () => {
+    return `${apiClient.defaults.baseURL}/api/samples/products`;
+  },
+
+  /**
+   * 샘플 설비 데이터 다운로드
+   */
+  downloadSampleEquipment: () => {
+    return `${apiClient.defaults.baseURL}/api/samples/equipment`;
+  },
+};
+
+
 export default apiClient;
