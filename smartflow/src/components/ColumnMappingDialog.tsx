@@ -326,7 +326,8 @@ export const ColumnMappingDialog: React.FC<ColumnMappingDialogProps> = ({
           <Button
             onClick={handleConfirm}
             disabled={!mapping.product_code || !mapping.quantity || !mapping.order_date || confirming}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm !text-white"
+            style={{ color: 'white', backgroundColor: '#2563eb' }}
           >
             {confirming ? '분석 중...' : `확인 및 업로드 (${previewData.total_rows}개)`}
           </Button>

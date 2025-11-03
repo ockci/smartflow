@@ -102,18 +102,14 @@ export const SchedulePage: React.FC<SchedulePageProps> = ({ onNavigate, onLogout
       setLoadingWeekly(true);
       const response = await apiClient.get('/api/schedule/weekly-summary');
       const list: WeeklySummary[] = response.data.weekly_summary || [];
-      if (list.length < 7) {
-        setWeeklySummary(list.slice(0, Math.min(list.length, 3)));
-      } else {
-        setWeeklySummary(list.slice(0, 7));
+      setWeeklySummary(list.slice(0, 2));
+      } catch (error) {
+        console.error('주간 요약 로딩 실패:', error);
+        setWeeklySummary([]);
+      } finally {
+        setLoadingWeekly(false);
       }
-    } catch (error) {
-      console.error('주간 요약 로딩 실패:', error);
-      setWeeklySummary([]);
-    } finally {
-      setLoadingWeekly(false);
-    }
-  };
+    };
 
   // 스케줄 생성 (헤더 버튼)
   const handleGenerateSchedule = async (): Promise<void> => {
@@ -246,6 +242,7 @@ export const SchedulePage: React.FC<SchedulePageProps> = ({ onNavigate, onLogout
                               const start = new Date(s.start_time);
                               const end = new Date(s.end_time);
                               const hours = Math.max(1, Math.round(s.duration_minutes / 60));
+                              console.log(hours);
                               return (
                                 <div key={s.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
                                   <div className="min-w-0">
@@ -292,7 +289,8 @@ export const SchedulePage: React.FC<SchedulePageProps> = ({ onNavigate, onLogout
                                       <Button
                                         size="sm"
                                         onClick={() => handleStatusChange(s.id, s.status)}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                                        className="bg-blue-600 hover:bg-blue-700 text-white !text-white"
+                                        style={{ color: 'white', backgroundColor: '#2563eb' }}
                                       >
                                         <Play className="w-4 h-4 mr-1" />
                                         시작
@@ -370,7 +368,9 @@ export const SchedulePage: React.FC<SchedulePageProps> = ({ onNavigate, onLogout
                                     ) : item.status === 'completed' ? (
                                       <span className="text-xs text-gray-400">완료</span>
                                     ) : (
-                                      <Button size="sm" onClick={() => handleStatusChange(item.id, item.status)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                                      <Button size="sm" onClick={() => handleStatusChange(item.id, item.status)} className="bg-blue-600 hover:bg-blue-700 text-white !text-white"
+                                        style={{ color: 'white', backgroundColor: '#2563eb' }}
+>
                                         <Play className="w-4 h-4 mr-1" /> 시작
                                       </Button>
                                     )}

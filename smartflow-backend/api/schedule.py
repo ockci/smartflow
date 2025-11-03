@@ -294,7 +294,7 @@ def get_weekly_summary(
         today = datetime.now().date()
         weekly_data = []
         
-        for i in range(7):
+        for i in range(2):
             target_date = today + timedelta(days=i)
     
             schedules = db.query(Schedule).join(Order).filter(
@@ -324,7 +324,7 @@ def get_weekly_summary(
         return {
             "weekly_summary": weekly_data,
             "total_quantity": sum(d["scheduled_quantity"] for d in weekly_data),
-            "avg_utilization": round(sum(d["utilization"] for d in weekly_data) / 7, 1)
+            "avg_utilization": round(sum(d["utilization"] for d in weekly_data) / 2, 1) if weekly_data else 0
         }
         
     except Exception as e:

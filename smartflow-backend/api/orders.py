@@ -25,6 +25,8 @@ TEMPLATE_DIR = os.path.join(os.getcwd(), "templates")
 @router.get("/list", response_model=List[OrderSchema])
 def get_orders(
     status: str | None = None,
+    limit: int = 500,      # ✅ 추가
+    offset: int = 0,       # ✅ 추가
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -38,7 +40,7 @@ def get_orders(
     if status:
         query = query.filter(Order.status == status)
     
-    orders = query.order_by(Order.created_at.desc()).all()
+    orders = query.order_by(Order.created_at.desc()).limit(limit).offset(offset).all()  # ✅ 수정
     return orders
 
 # orders.py에 추가할 코드

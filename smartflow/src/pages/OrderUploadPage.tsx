@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Download, Upload, AlarmClock, CheckCircle, Trash2 } from 'lucide-react';
+import { Box, Download, Upload, AlarmClock, CheckCircle, Trash2, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
@@ -50,7 +50,7 @@ export function OrderUploadPage({ onNavigate, onLogout }: OrderUploadPageProps) 
         .map(convertOrder);
       setUploadedOrders(filtered);
       
-      if (filtered.length > 0) {
+      if (filtered.length > 0 && !isUploading) {
         toast.success(`${filtered.length}개의 주문이 대기 중입니다`);
       }
     } catch (error) {
@@ -76,7 +76,7 @@ export function OrderUploadPage({ onNavigate, onLogout }: OrderUploadPageProps) 
       
       const result = await orderAPI.uploadExcel(file);
       
-      toast.success(`${result.count}개 주문이 등록되었습니다!`);
+      toast.success(`✅ ${result.count}개 주문이 등록되었습니다! 아래에서 확인하세요.`);
       
       // 목록 새로고침
       await fetchOrders();
@@ -131,7 +131,7 @@ export function OrderUploadPage({ onNavigate, onLogout }: OrderUploadPageProps) 
     }
 
     try {
-      await orderAPI.delete(Number(orderId));  // ← orderId를 숫자로 변환
+      await orderAPI.delete(Number(orderId));
       toast.success('주문이 삭제되었습니다');
       await fetchOrders();
     } catch (error) {
@@ -139,8 +139,6 @@ export function OrderUploadPage({ onNavigate, onLogout }: OrderUploadPageProps) 
       toast.error('주문 삭제에 실패했습니다');
     }
   };
-  
-  
 
   // 스케줄 생성 페이지로 이동
   const handleGenerateSchedule = () => {
@@ -221,9 +219,19 @@ export function OrderUploadPage({ onNavigate, onLogout }: OrderUploadPageProps) 
               </div>
             ) : uploadedOrders.length > 0 ? (
               <div>
-                <h3 className="text-lg font-medium text-[#1F2937] mb-4">
-                  대기 중인 주문 ({uploadedOrders.length}건)
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-[#1F2937]">
+                    대기 중인 주문 ({uploadedOrders.length}건)
+                  </h3>
+                  {uploadedOrders.length > 0 && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-lg border border-green-200">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <span className="text-sm font-medium text-green-700">
+                        ✅ 업로드 완료 - 스케줄 생성 가능
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <div className="border rounded-md">
                   <Table>
                     <TableHeader>

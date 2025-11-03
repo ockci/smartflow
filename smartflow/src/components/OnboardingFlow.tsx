@@ -96,8 +96,8 @@ export default function OnboardingFlow({ onNavigate }: OnboardingFlowProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-3xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 px-16">
+      <Card className="w-full max-w-3xl p-8 mx-8">
         {/* 헤더 */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">SmartFlow 시작하기</h1>
